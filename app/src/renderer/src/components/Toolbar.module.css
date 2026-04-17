@@ -12,11 +12,45 @@
 }
 
 .left,
+.center,
 .right {
   display: flex;
   align-items: center;
   gap: 8px;
   -webkit-app-region: no-drag;
+}
+
+.center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.viewToggle {
+  display: flex;
+  align-items: center;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  gap: 0;
+}
+
+.viewBtn {
+  background: transparent;
+  border: none;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.viewBtn:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+.viewBtnActive {
+  background: var(--accent) !important;
+  color: #fff !important;
 }
 
 .title {

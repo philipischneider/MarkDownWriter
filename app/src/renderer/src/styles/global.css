@@ -6,10 +6,16 @@ body { overflow: hidden; }
 /* Fontes */
 :root {
   --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-prose: 'Georgia', 'Times New Roman', serif;
+  --font-prose: Georgia, 'Times New Roman', serif;
+  --font-heading: inherit;
   --font-mono: 'Fira Code', 'Consolas', monospace;
   --line-height-prose: 1.8;
   --editor-font-size: 18px;
+  --editor-column-width: 70ch;
+  --editor-paragraph-spacing: 1.2em;
+  --editor-h1-size: 1.6em;
+  --editor-h2-size: 1.3em;
+  --editor-h3-size: 1.1em;
 }
 
 /* Tema escuro (padrão) */
@@ -282,6 +288,28 @@ span.entity-ref {
   border-bottom: 1.5px solid color-mix(in srgb, var(--entity-color) 60%, transparent);
   border-radius: 2px;
   cursor: default;
+}
+
+/* ─── Buscar e substituir ───────────────────────────────────────────────── */
+
+.find-match {
+  background: rgba(255, 200, 50, 0.3);
+  border-radius: 2px;
+}
+
+[data-theme="light"] .find-match {
+  background: rgba(255, 180, 0, 0.25);
+}
+
+.find-current {
+  background: rgba(255, 140, 30, 0.5);
+  border-radius: 2px;
+  outline: 1px solid rgba(255, 140, 30, 0.7);
+}
+
+[data-theme="light"] .find-current {
+  background: rgba(230, 120, 0, 0.3);
+  outline-color: rgba(200, 100, 0, 0.7);
 }
 
 /* ─── Repetição de palavras ──────────────────────────────────────────────── */

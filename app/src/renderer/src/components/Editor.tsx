@@ -1,14 +1,20 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { ChapterPanel } from './ChapterPanel'
 import { ProseMirrorEditor, EditorCommands } from './ProseMirrorEditor'
-import { Toolbar } from './Toolbar'
+import { Toolbar, ViewMode } from './Toolbar'
 import { StatusBar } from './StatusBar'
 import { EntityPanel, EntityPicker } from './EntityPanel'
 import { ExportDialog } from './ExportDialog'
 import { OllamaPanel } from './OllamaPanel'
+import { SourceView } from './SourceView'
+import { PreviewView } from './PreviewView'
+import { ThemeEditorPanel } from './ThemeEditorPanel'
+import { FindReplaceBar } from './FindReplaceBar'
+import { ProjectInfoDialog } from './ProjectInfoDialog'
 import { countWords } from '../editor/plugins/wordRepeat'
 import type { useProjectStore } from '../store/projectStore'
 import type { Chapter, Entity } from '../../../shared/types'
+import { DEFAULT_TYPOGRAPHY } from '../../../shared/types'
 import styles from './Editor.module.css'
 
 interface EditorProps {
@@ -23,13 +29,19 @@ export function Editor({ store, onSave }: EditorProps) {
     addEntity, updateEntity, deleteEntity
   } = store
   const { project, projectDir, chaptersContent, activeChapterId } = state
+
   const [panelOpen, setPanelOpen] = useState(true)
   const [entityPanelOpen, setEntityPanelOpen] = useState(false)
+  const [typographyPanelOpen, setTypographyPanelOpen] = useState(false)
+  const [ollamaPanelOpen, setOllamaPanelOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [pickerVisible, setPickerVisible] = useState(false)
   const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 })
   const [exportOpen, setExportOpen] = useState(false)
-  const [ollamaPanelOpen, setOllamaPanelOpen] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('edit')
+  const [findOpen, setFindOpen] = useState(false)
+  const [focusMode, setFocusMode] = useState(false)
+  const [projectInfoOpen, setProjectInfoOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Map chapterId → editor command ref
@@ -45,17 +57,28 @@ export function Editor({ store, onSave }: EditorProps) {
     setSaving(false)
   }, [onSave])
 
-  // Ctrl+S global
+  // Global keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault()
         handleSave()
       }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'f') {
+        e.preventDefault()
+        setFindOpen(v => !v)
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+        e.preventDefault()
+        setFocusMode(v => !v)
+      }
+      if (e.key === 'Escape' && focusMode) {
+        setFocusMode(false)
+      }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [handleSave])
+  }, [handleSave, focusMode])
 
   const handleAddChapter = async () => {
     const chapter = await window.api.chapter.create(projectDir)
@@ -114,7 +137,8 @@ export function Editor({ store, onSave }: EditorProps) {
   }
 
   const handleScrollToChapter = (chapterId: string) => {
-    const el = document.getElementById(`chapter-${chapterId}`)
+    const prefix = viewMode === 'source' ? 'source' : viewMode === 'preview' ? 'preview' : 'chapter'
+    const el = document.getElementById(`${prefix}-${chapterId}`)
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
     setActiveChapter(chapterId)
   }
@@ -147,6 +171,15 @@ export function Editor({ store, onSave }: EditorProps) {
     }))
   }
 
+  const handleTypographyChange = (typography: typeof DEFAULT_TYPOGRAPHY) => {
+    updateProject(p => ({ ...p, settings: { ...p.settings, typography } }))
+  }
+
+  const handleProjectInfoSave = (title: string, author: string) => {
+    updateProject(p => ({ ...p, title, author }))
+    setProjectInfoOpen(false)
+  }
+
   const wordCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const [id, md] of Object.entries(chaptersContent)) {
@@ -173,37 +206,62 @@ export function Editor({ store, onSave }: EditorProps) {
     setPickerVisible(true)
   }
 
-  return (
-    <div className={styles.shell}>
-      <Toolbar
-        projectTitle={project.title}
-        theme={project.settings.theme}
-        fontSize={project.settings.fontSize}
-        isDirty={state.isDirty}
-        saving={saving}
-        panelOpen={panelOpen}
-        entityPanelOpen={entityPanelOpen}
-        onTogglePanel={() => setPanelOpen(v => !v)}
-        onToggleEntityPanel={() => setEntityPanelOpen(v => !v)}
-        ollamaPanelOpen={ollamaPanelOpen}
-        onToggleOllamaPanel={() => setOllamaPanelOpen(v => !v)}
-        onSave={handleSave}
-        onExport={() => setExportOpen(true)}
-        onThemeToggle={handleThemeToggle}
-        onFontSizeIncrease={() => handleFontSizeChange(1)}
-        onFontSizeDecrease={() => handleFontSizeChange(-1)}
-      />
+  const typography = project.settings.typography ?? DEFAULT_TYPOGRAPHY
 
-      {/* Formatting bar */}
-      <FormattingBar
-        onInsertFootnote={() => activeEditor()?.insertFootnote()}
-        onInsertComment={() => activeEditor()?.insertComment()}
-        onInsertVersionGroup={() => activeEditor()?.insertVersionGroup()}
-        onInsertEntity={handleOpenEntityPicker}
-      />
+  return (
+    <div className={styles.shell + (focusMode ? ' ' + styles.focusMode : '')}>
+      {!focusMode && (
+        <Toolbar
+          projectTitle={project.title}
+          theme={project.settings.theme}
+          fontSize={project.settings.fontSize}
+          isDirty={state.isDirty}
+          saving={saving}
+          panelOpen={panelOpen}
+          entityPanelOpen={entityPanelOpen}
+          ollamaPanelOpen={ollamaPanelOpen}
+          typographyPanelOpen={typographyPanelOpen}
+          focusMode={focusMode}
+          viewMode={viewMode}
+          onTogglePanel={() => setPanelOpen(v => !v)}
+          onToggleEntityPanel={() => setEntityPanelOpen(v => !v)}
+          onToggleOllamaPanel={() => setOllamaPanelOpen(v => !v)}
+          onToggleTypographyPanel={() => setTypographyPanelOpen(v => !v)}
+          onToggleFocusMode={() => setFocusMode(v => !v)}
+          onSetViewMode={setViewMode}
+          onSave={handleSave}
+          onExport={() => setExportOpen(true)}
+          onThemeToggle={handleThemeToggle}
+          onFontSizeIncrease={() => handleFontSizeChange(1)}
+          onFontSizeDecrease={() => handleFontSizeChange(-1)}
+          onFind={() => setFindOpen(v => !v)}
+          onEditProjectInfo={() => setProjectInfoOpen(true)}
+        />
+      )}
+
+      {/* Formatting bar — only in edit mode */}
+      {viewMode === 'edit' && !focusMode && (
+        <FormattingBar
+          onInsertFootnote={() => activeEditor()?.insertFootnote()}
+          onInsertComment={() => activeEditor()?.insertComment()}
+          onInsertVersionGroup={() => activeEditor()?.insertVersionGroup()}
+          onInsertEntity={handleOpenEntityPicker}
+        />
+      )}
+
+      {/* Find/replace bar */}
+      {findOpen && viewMode === 'edit' && (
+        <FindReplaceBar
+          editor={activeEditor()}
+          onClose={() => {
+            setFindOpen(false)
+            activeEditor()?.findSetQuery('')
+          }}
+        />
+      )}
 
       <div className={styles.body}>
-        {panelOpen && (
+        {panelOpen && !focusMode && (
           <ChapterPanel
             chapters={project.chapters}
             activeChapterId={activeChapterId}
@@ -217,32 +275,54 @@ export function Editor({ store, onSave }: EditorProps) {
           />
         )}
 
-        <div className={styles.scrollArea} ref={scrollRef}>
-          <div className={styles.editorContent}>
-            {project.chapters.map((chapter, index) => (
-              <div key={chapter.id} id={`chapter-${chapter.id}`} className={styles.chapterBlock}>
-                <ChapterHeader
-                  chapter={chapter}
-                  isFirst={index === 0}
-                  onSplit={(before, after) => handleSplitChapter(chapter.id, before, after)}
-                />
-                <ProseMirrorEditor
-                  ref={cmds => {
-                    if (cmds) editorRefs.current.set(chapter.id, cmds)
-                    else editorRefs.current.delete(chapter.id)
-                  }}
-                  chapterId={chapter.id}
-                  content={chaptersContent[chapter.id] ?? ''}
-                  onChange={content => updateChapterContent(chapter.id, content)}
-                  onFocus={() => setActiveChapter(chapter.id)}
-                  onSplitRequest={(before, after) => handleSplitChapter(chapter.id, before, after)}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Source view */}
+        {viewMode === 'source' && (
+          <SourceView
+            chapters={project.chapters}
+            chaptersContent={chaptersContent}
+            onChange={updateChapterContent}
+            activeChapterId={activeChapterId}
+            onFocus={setActiveChapter}
+          />
+        )}
 
-        {ollamaPanelOpen && (
+        {/* Preview view */}
+        {viewMode === 'preview' && (
+          <PreviewView
+            chapters={project.chapters}
+            chaptersContent={chaptersContent}
+          />
+        )}
+
+        {/* Edit (WYSIWYG) view */}
+        {viewMode === 'edit' && (
+          <div className={styles.scrollArea} ref={scrollRef}>
+            <div className={styles.editorContent}>
+              {project.chapters.map((chapter, index) => (
+                <div key={chapter.id} id={`chapter-${chapter.id}`} className={styles.chapterBlock}>
+                  <ChapterHeader
+                    chapter={chapter}
+                    isFirst={index === 0}
+                    onSplit={(before, after) => handleSplitChapter(chapter.id, before, after)}
+                  />
+                  <ProseMirrorEditor
+                    ref={cmds => {
+                      if (cmds) editorRefs.current.set(chapter.id, cmds)
+                      else editorRefs.current.delete(chapter.id)
+                    }}
+                    chapterId={chapter.id}
+                    content={chaptersContent[chapter.id] ?? ''}
+                    onChange={content => updateChapterContent(chapter.id, content)}
+                    onFocus={() => setActiveChapter(chapter.id)}
+                    onSplitRequest={(before, after) => handleSplitChapter(chapter.id, before, after)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {ollamaPanelOpen && !focusMode && (
           <OllamaPanel
             selectedText={activeEditor()?.getSelectedText() ?? ''}
             contextText={activeEditor()?.getContextText() ?? ''}
@@ -250,7 +330,14 @@ export function Editor({ store, onSave }: EditorProps) {
           />
         )}
 
-        {entityPanelOpen && (
+        {typographyPanelOpen && !focusMode && (
+          <ThemeEditorPanel
+            typography={typography}
+            onChange={handleTypographyChange}
+          />
+        )}
+
+        {entityPanelOpen && !focusMode && (
           <EntityPanel
             entities={project.entities}
             chaptersContent={chaptersContent}
@@ -262,11 +349,23 @@ export function Editor({ store, onSave }: EditorProps) {
         )}
       </div>
 
-      <StatusBar
-        activeChapterTitle={activeChapter?.title ?? ''}
-        activeChapterWords={activeChapterId ? (wordCounts[activeChapterId] ?? 0) : 0}
-        totalWords={totalWords}
-      />
+      {!focusMode && (
+        <StatusBar
+          activeChapterTitle={activeChapter?.title ?? ''}
+          activeChapterWords={activeChapterId ? (wordCounts[activeChapterId] ?? 0) : 0}
+          totalWords={totalWords}
+        />
+      )}
+
+      {focusMode && (
+        <div style={{
+          position: 'fixed', bottom: 16, right: 20,
+          fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-ui)',
+          pointerEvents: 'none'
+        }}>
+          Esc · Ctrl+Shift+F — sair do modo foco
+        </div>
+      )}
 
       {exportOpen && projectDir && (
         <ExportDialog
@@ -287,6 +386,15 @@ export function Editor({ store, onSave }: EditorProps) {
           }}
           onClose={() => setPickerVisible(false)}
           style={{ top: pickerPos.top, left: pickerPos.left }}
+        />
+      )}
+
+      {projectInfoOpen && (
+        <ProjectInfoDialog
+          title={project.title}
+          author={project.author}
+          onSave={handleProjectInfoSave}
+          onClose={() => setProjectInfoOpen(false)}
         />
       )}
     </div>

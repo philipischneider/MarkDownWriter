@@ -5,6 +5,7 @@ import { RecoveryDialog } from './components/RecoveryDialog'
 import { useProjectStore } from './store/projectStore'
 import { useAutosave } from './hooks/useAutosave'
 import type { LoadedProject } from '../../shared/types'
+import { DEFAULT_TYPOGRAPHY } from '../../shared/types'
 
 export default function App() {
   const store = useProjectStore()
@@ -71,6 +72,20 @@ export default function App() {
     const size = state.project?.settings.fontSize ?? 18
     document.documentElement.style.setProperty('--editor-font-size', `${size}px`)
   }, [state.project?.settings.fontSize])
+
+  // Aplicar tipografia
+  useEffect(() => {
+    const t = state.project?.settings.typography ?? DEFAULT_TYPOGRAPHY
+    const el = document.documentElement
+    el.style.setProperty('--font-prose', t.fontProse)
+    el.style.setProperty('--font-heading', t.fontHeading)
+    el.style.setProperty('--line-height-prose', String(t.lineHeight))
+    el.style.setProperty('--editor-paragraph-spacing', `${t.paragraphSpacing}em`)
+    el.style.setProperty('--editor-column-width', `${t.columnWidth}ch`)
+    el.style.setProperty('--editor-h1-size', `${t.h1Size}em`)
+    el.style.setProperty('--editor-h2-size', `${t.h2Size}em`)
+    el.style.setProperty('--editor-h3-size', `${t.h3Size}em`)
+  }, [state.project?.settings.typography])
 
   if (recoverySnapshot) {
     return (

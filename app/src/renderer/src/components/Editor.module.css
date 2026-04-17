@@ -49,9 +49,19 @@
 }
 
 .editorContent {
-  max-width: 720px;
+  max-width: var(--editor-column-width, 70ch);
   margin: 0 auto;
   padding: 48px 32px 200px;
+}
+
+/* Focus mode: hide toolbar, sidebar, status bar */
+.shell.focusMode .formattingBar,
+.shell.focusMode .statusBarSlot {
+  display: none;
+}
+
+.shell.focusMode .editorContent {
+  padding-top: 80px;
 }
 
 .chapterBlock {

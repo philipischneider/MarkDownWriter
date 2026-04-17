@@ -6,6 +6,7 @@ import { schema } from '../editor/schema'
 import { mdParser, mdSerializer } from '../editor/markdown'
 import { buildInputRules } from '../editor/inputRules'
 import { wordRepeatPlugin } from '../editor/plugins/wordRepeat'
+import { findReplacePlugin, setQuery, findNext, findPrev, replaceCurrent, replaceAll } from '../editor/plugins/findReplace'
 import { FootnoteView, resetFootnoteCounter } from '../editor/nodeviews/FootnoteView'
 import { CommentView } from '../editor/nodeviews/CommentView'
 import { VersionGroupView } from '../editor/nodeviews/VersionGroupView'
@@ -15,7 +16,8 @@ function buildPlugins() {
   return [
     ...exampleSetup({ schema, menuBar: false }),
     buildInputRules(schema),
-    wordRepeatPlugin()
+    wordRepeatPlugin(),
+    findReplacePlugin()
   ]
 }
 
@@ -28,6 +30,11 @@ export interface EditorCommands {
   getSelectedText: () => string
   getContextText: (chars?: number) => string
   insertTextAtCursor: (text: string) => void
+  findSetQuery: (query: string) => void
+  findNext: () => void
+  findPrev: () => void
+  findReplaceCurrent: (replacement: string) => void
+  findReplaceAll: (replacement: string) => void
 }
 
 interface ProseMirrorEditorProps {
@@ -161,10 +168,24 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
         const view = viewRef.current
         if (!view) return
         const { state, dispatch } = view
-        dispatch(state.tr.replaceSelectionWith(
-          state.schema.text(text)
-        ))
+        dispatch(state.tr.replaceSelectionWith(state.schema.text(text)))
         view.focus()
+      },
+
+      findSetQuery(query: string) {
+        if (viewRef.current) setQuery(viewRef.current, query)
+      },
+      findNext() {
+        if (viewRef.current) findNext(viewRef.current)
+      },
+      findPrev() {
+        if (viewRef.current) findPrev(viewRef.current)
+      },
+      findReplaceCurrent(replacement: string) {
+        if (viewRef.current) replaceCurrent(viewRef.current, replacement)
+      },
+      findReplaceAll(replacement: string) {
+        if (viewRef.current) replaceAll(viewRef.current, replacement)
       }
     }), [])
 

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import type { Project, Chapter, Entity, LoadedProject } from '../../../shared/types'
+import { DEFAULT_TYPOGRAPHY } from '../../../shared/types'
 
 export interface ProjectState {
   projectDir: string | null
@@ -25,7 +26,11 @@ export function useProjectStore() {
       projectDir: loaded.projectDir,
       project: {
         ...loaded.project,
-        entities: loaded.project.entities ?? []
+        entities: loaded.project.entities ?? [],
+        settings: {
+          ...loaded.project.settings,
+          typography: loaded.project.settings.typography ?? DEFAULT_TYPOGRAPHY
+        }
       },
       chaptersContent: loaded.chaptersContent,
       activeChapterId: loaded.project.chapters[0]?.id ?? null,

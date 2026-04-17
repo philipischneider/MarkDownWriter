@@ -31,12 +31,35 @@ export interface Entity {
 // Mantido para compatibilidade com project.json legado
 export type EntityRef = Pick<Entity, 'id' | 'type' | 'name' | 'aliases'>
 
+export interface TypographySettings {
+  fontProse: string
+  fontHeading: string
+  lineHeight: number          // e.g. 1.8
+  paragraphSpacing: number    // em units, e.g. 1.2
+  columnWidth: number         // ch units, e.g. 70
+  h1Size: number              // em units, e.g. 1.6
+  h2Size: number
+  h3Size: number
+}
+
+export const DEFAULT_TYPOGRAPHY: TypographySettings = {
+  fontProse: 'Georgia, "Times New Roman", serif',
+  fontHeading: 'inherit',
+  lineHeight: 1.8,
+  paragraphSpacing: 1.2,
+  columnWidth: 70,
+  h1Size: 1.6,
+  h2Size: 1.3,
+  h3Size: 1.1,
+}
+
 export interface ProjectSettings {
   autosaveInterval: number
   backupRetentionHours: number
   backupMaxSnapshots: number
   theme: Theme
   fontSize: number
+  typography: TypographySettings
 }
 
 export interface Project {

@@ -1,6 +1,8 @@
 import styles from './Toolbar.module.css'
 import type { Theme } from '../../../shared/types'
 
+export type ViewMode = 'edit' | 'source' | 'preview'
+
 interface ToolbarProps {
   projectTitle: string
   theme: Theme
@@ -10,22 +12,32 @@ interface ToolbarProps {
   panelOpen: boolean
   entityPanelOpen: boolean
   ollamaPanelOpen: boolean
+  typographyPanelOpen: boolean
+  focusMode: boolean
+  viewMode: ViewMode
   onTogglePanel: () => void
   onToggleEntityPanel: () => void
   onToggleOllamaPanel: () => void
+  onToggleTypographyPanel: () => void
+  onToggleFocusMode: () => void
+  onSetViewMode: (mode: ViewMode) => void
   onSave: () => void
   onExport: () => void
   onThemeToggle: () => void
   onFontSizeIncrease: () => void
   onFontSizeDecrease: () => void
+  onFind: () => void
+  onEditProjectInfo: () => void
 }
 
 export function Toolbar({
   projectTitle, theme, fontSize, isDirty, saving,
-  panelOpen, entityPanelOpen, ollamaPanelOpen,
-  onTogglePanel, onToggleEntityPanel, onToggleOllamaPanel,
+  panelOpen, entityPanelOpen, ollamaPanelOpen, typographyPanelOpen, focusMode, viewMode,
+  onTogglePanel, onToggleEntityPanel, onToggleOllamaPanel, onToggleTypographyPanel,
+  onToggleFocusMode, onSetViewMode,
   onSave, onExport, onThemeToggle,
-  onFontSizeIncrease, onFontSizeDecrease
+  onFontSizeIncrease, onFontSizeDecrease,
+  onFind, onEditProjectInfo
 }: ToolbarProps) {
   return (
     <div className={styles.toolbar}>
@@ -37,9 +49,42 @@ export function Toolbar({
         >
           {panelOpen ? '◧' : '▣'}
         </button>
-        <span className={styles.title}>{projectTitle}</span>
+        <span
+          className={styles.title}
+          title="Editar informações do projeto"
+          onClick={onEditProjectInfo}
+          style={{ cursor: 'pointer' }}
+        >
+          {projectTitle}
+        </span>
         {isDirty && !saving && <span className={styles.dot} title="Alterações não salvas" />}
         {saving && <span className={styles.saving}>salvando...</span>}
+      </div>
+
+      <div className={styles.center}>
+        <div className={styles.viewToggle}>
+          <button
+            className={styles.viewBtn + (viewMode === 'edit' ? ' ' + styles.viewBtnActive : '')}
+            onClick={() => onSetViewMode('edit')}
+            title="Modo edição (WYSIWYG)"
+          >
+            Editar
+          </button>
+          <button
+            className={styles.viewBtn + (viewMode === 'source' ? ' ' + styles.viewBtnActive : '')}
+            onClick={() => onSetViewMode('source')}
+            title="Código fonte Markdown"
+          >
+            Fonte
+          </button>
+          <button
+            className={styles.viewBtn + (viewMode === 'preview' ? ' ' + styles.viewBtnActive : '')}
+            onClick={() => onSetViewMode('preview')}
+            title="Pré-visualização renderizada"
+          >
+            Preview
+          </button>
+        </div>
       </div>
 
       <div className={styles.right}>
@@ -50,6 +95,16 @@ export function Toolbar({
         </div>
         <button className={styles.iconBtn} onClick={onThemeToggle} title="Alternar tema">
           {theme === 'dark' ? '☀' : '☾'}
+        </button>
+        <button className={styles.iconBtn} onClick={onFind} title="Buscar e substituir (Ctrl+F)">
+          ⌕
+        </button>
+        <button
+          className={styles.iconBtn + (typographyPanelOpen ? ' ' + styles.iconBtnActive : '')}
+          onClick={onToggleTypographyPanel}
+          title="Editor de tipografia"
+        >
+          Aa
         </button>
         <button
           className={styles.iconBtn + (entityPanelOpen ? ' ' + styles.iconBtnActive : '')}
@@ -64,6 +119,13 @@ export function Toolbar({
           title="Sugestões LLM (Ollama)"
         >
           ✦
+        </button>
+        <button
+          className={styles.iconBtn + (focusMode ? ' ' + styles.iconBtnActive : '')}
+          onClick={onToggleFocusMode}
+          title="Modo foco (Ctrl+Shift+F)"
+        >
+          ⛶
         </button>
         <button className={styles.iconBtn} onClick={onExport} title="Exportar (PDF, DOCX, EPUB…)">
           ⬆
