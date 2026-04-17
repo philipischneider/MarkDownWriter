@@ -164,3 +164,95 @@
   border-top: 1px solid var(--border-color);
   margin: 4px 0;
 }
+
+/* ── Chapter group container ─────────────────────────────────────────────── */
+
+.chapterGroup {
+  /* transparent container — visual styling is on .item and .headingItem */
+}
+
+/* Collapse / expand button */
+.collapseBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 7px;
+  line-height: 1;
+  width: 14px;
+  flex-shrink: 0;
+  text-align: center;
+  transition: color 0.1s;
+}
+.collapseBtn:hover { color: var(--text-primary); }
+
+.collapseSpacer {
+  display: inline-block;
+  width: 14px;
+  flex-shrink: 0;
+}
+
+/* ── Heading list ─────────────────────────────────────────────────────────── */
+
+.headingList {
+  list-style: none;
+  margin: 0 0 4px 0;
+  padding: 0;
+}
+
+.headingItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-right: 12px;
+  cursor: pointer;
+  border-radius: 5px;
+  margin: 1px 6px;
+  transition: background 0.1s;
+  position: relative;
+  border-top: 2px solid transparent;
+}
+.headingItem:hover { background: var(--bg-hover); }
+.headingItem.headingDropAbove { border-top-color: var(--accent); }
+
+.headingDropZone {
+  height: 6px;
+  margin: 0 6px;
+  border-radius: 2px;
+  border-top: 2px solid transparent;
+}
+.headingDropZone.headingDropAbove { border-top-color: var(--accent); }
+
+.headingHandle {
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.1s;
+  flex-shrink: 0;
+}
+.headingItem:hover .headingHandle { opacity: 1; }
+
+.headingTitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.headingTitle[data-level="1"] {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 12px;
+}
+.headingTitle[data-level="2"] {
+  color: var(--text-secondary);
+}
+.headingTitle[data-level="3"] {
+  font-size: 11px;
+  color: var(--text-muted);
+}

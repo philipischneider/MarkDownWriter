@@ -1,11 +1,15 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import type { Chapter, ChapterStatus } from '../../../shared/types'
+import { extractHeadings } from '../editor/headingUtils'
 import styles from './ChapterPanel.module.css'
 
 interface ChapterPanelProps {
   chapters: Chapter[]
   activeChapterId: string | null
+  chaptersContent: Record<string, string>
   onSelectChapter: (id: string) => void
+  onScrollToHeading: (chapterId: string, index: number) => void
+  onReorderSections: (chapterId: string, fromIdx: number, toIdx: number) => void
   onAddChapter: () => void
   onDeleteChapter: (id: string) => void
   onRenameChapter: (id: string, title: string) => void
@@ -16,22 +20,57 @@ interface ChapterPanelProps {
 
 const STATUS_OPTIONS: ChapterStatus[] = ['rascunho', 'provisório', 'final', 'arquivado']
 
+const HEADING_INDENT: Record<number, number> = { 1: 20, 2: 30, 3: 40 }
+
 export function ChapterPanel({
-  chapters, activeChapterId, onSelectChapter, onAddChapter,
-  onDeleteChapter, onRenameChapter, onReorder, onStatusChange, onMergeWithPrevious
+  chapters, activeChapterId, chaptersContent,
+  onSelectChapter, onScrollToHeading, onReorderSections,
+  onAddChapter, onDeleteChapter, onRenameChapter,
+  onReorder, onStatusChange, onMergeWithPrevious
 }: ChapterPanelProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState('')
   const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null)
+  const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(new Set())
+  const [headingDropTarget, setHeadingDropTarget] = useState<string | null>(null)
+
+  // Chapter drag state
   const dragItem = useRef<number | null>(null)
   const dragOverItem = useRef<number | null>(null)
 
-  const handleDragStart = (index: number) => { dragItem.current = index }
-  const handleDragEnter = (index: number) => { dragOverItem.current = index }
+  // Heading drag state
+  const dragHeadingFrom = useRef<{ chapterId: string; idx: number } | null>(null)
+
+  // Compute headings for each chapter
+  const chapterHeadings = useMemo(() => {
+    const result: Record<string, ReturnType<typeof extractHeadings>> = {}
+    for (const chapter of chapters) {
+      const md = chaptersContent[chapter.id] ?? ''
+      result[chapter.id] = extractHeadings(md, chapter.id)
+    }
+    return result
+  }, [chapters, chaptersContent])
+
+  // ── Chapter drag ──────────────────────────────────────────────────────────
+
+  const handleDragStart = (index: number) => {
+    if (dragHeadingFrom.current) return
+    dragItem.current = index
+  }
+
+  const handleDragEnter = (index: number) => {
+    if (dragHeadingFrom.current) return
+    dragOverItem.current = index
+  }
 
   const handleDragEnd = () => {
+    if (dragHeadingFrom.current) return
     if (dragItem.current === null || dragOverItem.current === null) return
-    if (dragItem.current === dragOverItem.current) return
+    if (dragItem.current === dragOverItem.current) {
+      dragItem.current = null
+      dragOverItem.current = null
+      return
+    }
     const reordered = [...chapters]
     const dragged = reordered.splice(dragItem.current, 1)[0]
     reordered.splice(dragOverItem.current, 0, dragged)
@@ -39,6 +78,49 @@ export function ChapterPanel({
     dragOverItem.current = null
     onReorder(reordered)
   }
+
+  // ── Heading drag ──────────────────────────────────────────────────────────
+
+  const handleHeadingDragStart = (e: React.DragEvent, chapterId: string, idx: number) => {
+    e.stopPropagation()
+    dragHeadingFrom.current = { chapterId, idx }
+  }
+
+  const handleHeadingDragEnter = (e: React.DragEvent, chapterId: string, target: number | 'end') => {
+    e.stopPropagation()
+    if (dragHeadingFrom.current?.chapterId !== chapterId) return
+    setHeadingDropTarget(`${chapterId}|${target}`)
+  }
+
+  const handleHeadingDragEnd = (e: React.DragEvent) => {
+    e.stopPropagation()
+    const from = dragHeadingFrom.current
+    if (from && headingDropTarget) {
+      const [targetChapter, targetIdx] = headingDropTarget.split('|')
+      if (targetChapter === from.chapterId) {
+        const headings = chapterHeadings[from.chapterId] ?? []
+        const toIdx = targetIdx === 'end' ? headings.length : parseInt(targetIdx, 10)
+        if (!isNaN(toIdx)) {
+          onReorderSections(from.chapterId, from.idx, toIdx)
+        }
+      }
+    }
+    dragHeadingFrom.current = null
+    setHeadingDropTarget(null)
+  }
+
+  // ── Chapter collapse ──────────────────────────────────────────────────────
+
+  const toggleCollapse = (chapterId: string) => {
+    setCollapsedChapters(prev => {
+      const next = new Set(prev)
+      if (next.has(chapterId)) next.delete(chapterId)
+      else next.add(chapterId)
+      return next
+    })
+  }
+
+  // ── Chapter edit / context menu ───────────────────────────────────────────
 
   const startEdit = (chapter: Chapter) => {
     setEditingId(chapter.id)
@@ -66,42 +148,98 @@ export function ChapterPanel({
       </div>
 
       <ul className={styles.list}>
-        {chapters.map((chapter, index) => (
-          <li
-            key={chapter.id}
-            className={`${styles.item} ${chapter.id === activeChapterId ? styles.active : ''}`}
-            draggable
-            onDragStart={() => handleDragStart(index)}
-            onDragEnter={() => handleDragEnter(index)}
-            onDragEnd={handleDragEnd}
-            onDragOver={e => e.preventDefault()}
-            onClick={() => onSelectChapter(chapter.id)}
-            onContextMenu={e => handleContextMenu(e, chapter.id)}
-          >
-            <span className={styles.dragHandle} title="Arrastar">⠿</span>
+        {chapters.map((chapter, index) => {
+          const headings = chapterHeadings[chapter.id] ?? []
+          const isCollapsed = collapsedChapters.has(chapter.id)
+          const showHeadings = headings.length > 0 && !isCollapsed
 
-            {editingId === chapter.id ? (
-              <input
-                className={styles.titleInput}
-                value={editingTitle}
-                autoFocus
-                onChange={e => setEditingTitle(e.target.value)}
-                onBlur={() => commitEdit(chapter.id)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') commitEdit(chapter.id)
-                  if (e.key === 'Escape') setEditingId(null)
-                }}
-                onClick={e => e.stopPropagation()}
-              />
-            ) : (
-              <span className={styles.title} onDoubleClick={() => startEdit(chapter)}>
-                {chapter.title}
-              </span>
-            )}
+          return (
+            <li
+              key={chapter.id}
+              className={styles.chapterGroup}
+              onDragEnter={() => handleDragEnter(index)}
+              onDragOver={e => { if (!dragHeadingFrom.current) e.preventDefault() }}
+            >
+              {/* Chapter header row */}
+              <div
+                className={`${styles.item} ${chapter.id === activeChapterId ? styles.active : ''}`}
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragEnd={handleDragEnd}
+                onClick={() => onSelectChapter(chapter.id)}
+                onContextMenu={e => handleContextMenu(e, chapter.id)}
+              >
+                {headings.length > 0 ? (
+                  <button
+                    className={styles.collapseBtn}
+                    onClick={e => { e.stopPropagation(); toggleCollapse(chapter.id) }}
+                    title={isCollapsed ? 'Expandir seções' : 'Recolher seções'}
+                  >
+                    {isCollapsed ? '▶' : '▼'}
+                  </button>
+                ) : (
+                  <span className={styles.collapseSpacer} />
+                )}
 
-            <span className={styles.statusDot} data-status={chapter.status} title={chapter.status} />
-          </li>
-        ))}
+                <span className={styles.dragHandle} title="Arrastar">⠿</span>
+
+                {editingId === chapter.id ? (
+                  <input
+                    className={styles.titleInput}
+                    value={editingTitle}
+                    autoFocus
+                    onChange={e => setEditingTitle(e.target.value)}
+                    onBlur={() => commitEdit(chapter.id)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') commitEdit(chapter.id)
+                      if (e.key === 'Escape') setEditingId(null)
+                    }}
+                    onClick={e => e.stopPropagation()}
+                  />
+                ) : (
+                  <span className={styles.title} onDoubleClick={() => startEdit(chapter)}>
+                    {chapter.title}
+                  </span>
+                )}
+
+                <span className={styles.statusDot} data-status={chapter.status} title={chapter.status} />
+              </div>
+
+              {/* Heading items */}
+              {showHeadings && (
+                <ul className={styles.headingList}>
+                  {headings.map((heading, hIdx) => {
+                    const dropKey = `${chapter.id}|${hIdx}`
+                    return (
+                      <li
+                        key={heading.id}
+                        className={`${styles.headingItem} ${headingDropTarget === dropKey ? styles.headingDropAbove : ''}`}
+                        style={{ paddingLeft: HEADING_INDENT[heading.level] ?? 20 }}
+                        draggable
+                        onDragStart={e => handleHeadingDragStart(e, chapter.id, hIdx)}
+                        onDragEnter={e => handleHeadingDragEnter(e, chapter.id, hIdx)}
+                        onDragEnd={handleHeadingDragEnd}
+                        onDragOver={e => { e.stopPropagation(); e.preventDefault() }}
+                        onClick={e => { e.stopPropagation(); onScrollToHeading(chapter.id, hIdx) }}
+                      >
+                        <span className={styles.headingHandle}>⠿</span>
+                        <span className={styles.headingTitle} data-level={heading.level}>
+                          {heading.text}
+                        </span>
+                      </li>
+                    )
+                  })}
+                  {/* End drop zone */}
+                  <li
+                    className={`${styles.headingDropZone} ${headingDropTarget === `${chapter.id}|end` ? styles.headingDropAbove : ''}`}
+                    onDragEnter={e => handleHeadingDragEnter(e, chapter.id, 'end')}
+                    onDragOver={e => { e.stopPropagation(); e.preventDefault() }}
+                  />
+                </ul>
+              )}
+            </li>
+          )
+        })}
       </ul>
 
       {contextMenu && (() => {

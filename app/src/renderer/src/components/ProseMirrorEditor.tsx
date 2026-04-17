@@ -38,6 +38,7 @@ export interface EditorCommands {
   findReplaceCurrent: (replacement: string) => void
   findReplaceAll: (replacement: string) => void
   setLtEnabled: (enabled: boolean) => void
+  scrollToHeading: (index: number) => void
 }
 
 interface ProseMirrorEditorProps {
@@ -205,6 +206,22 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
       },
       setLtEnabled(enabled: boolean) {
         if (viewRef.current) setLtEnabled(viewRef.current, enabled)
+      },
+
+      scrollToHeading(index: number) {
+        const view = viewRef.current
+        if (!view) return
+        let count = 0
+        view.state.doc.forEach((node, offset) => {
+          if (node.type.name !== 'heading' || count++ !== index) return
+          try {
+            const { node: domNode } = view.domAtPos(offset + 1)
+            const el = domNode.nodeType === Node.ELEMENT_NODE
+              ? domNode as HTMLElement
+              : (domNode as Node).parentElement
+            el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          } catch { /* ignore */ }
+        })
       }
     }), [])
 

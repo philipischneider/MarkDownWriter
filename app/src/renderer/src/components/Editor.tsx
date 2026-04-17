@@ -12,6 +12,7 @@ import { ThemeEditorPanel } from './ThemeEditorPanel'
 import { FindReplaceBar } from './FindReplaceBar'
 import { ProjectInfoDialog } from './ProjectInfoDialog'
 import { countWords } from '../editor/plugins/wordRepeat'
+import { extractHeadings, moveSection } from '../editor/headingUtils'
 import type { useProjectStore } from '../store/projectStore'
 import type { Chapter, Entity } from '../../../shared/types'
 import { DEFAULT_TYPOGRAPHY } from '../../../shared/types'
@@ -142,6 +143,22 @@ export function Editor({ store, onSave }: EditorProps) {
     const el = document.getElementById(`${prefix}-${chapterId}`)
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
     setActiveChapter(chapterId)
+  }
+
+  const handleScrollToHeading = (chapterId: string, headingIndex: number) => {
+    handleScrollToChapter(chapterId)
+    setTimeout(() => {
+      editorRefs.current.get(chapterId)?.scrollToHeading(headingIndex)
+    }, 120)
+  }
+
+  const handleReorderSections = async (chapterId: string, fromIdx: number, toIdx: number) => {
+    const markdown = chaptersContent[chapterId] ?? ''
+    const headings = extractHeadings(markdown, chapterId)
+    const newMarkdown = moveSection(markdown, headings, fromIdx, toIdx)
+    if (newMarkdown === markdown) return
+    updateChapterContent(chapterId, newMarkdown)
+    await window.api.chapter.write(projectDir, chapterId, newMarkdown)
   }
 
   const handleFontSizeChange = (delta: number) => {
@@ -276,7 +293,10 @@ export function Editor({ store, onSave }: EditorProps) {
           <ChapterPanel
             chapters={project.chapters}
             activeChapterId={activeChapterId}
+            chaptersContent={chaptersContent}
             onSelectChapter={handleScrollToChapter}
+            onScrollToHeading={handleScrollToHeading}
+            onReorderSections={handleReorderSections}
             onAddChapter={handleAddChapter}
             onDeleteChapter={handleDeleteChapter}
             onRenameChapter={handleRenameChapter}
