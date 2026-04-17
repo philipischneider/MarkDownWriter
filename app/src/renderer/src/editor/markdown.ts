@@ -99,6 +99,48 @@ export const mdSerializer = new MarkdownSerializer(
   }
 )
 
+// ─── Version group pre-processor ─────────────────────────────────────────────
+
+/**
+ * Strips version_group HTML comment markers from markdown, keeping only the
+ * content of the active version (marked with :active). Used before parsing
+ * (edit mode round-trip) and before preview rendering.
+ */
+export function keepActiveVersionOnly(md: string): string {
+  const lines = md.split('\n')
+  const result: string[] = []
+  let depth = 0
+  let keepCurrent = false  // inside a version_group, are we in the active version?
+
+  for (const line of lines) {
+    const t = line.trim()
+
+    if (t === '<!-- versions:start -->') {
+      depth++
+      if (depth > 1 && keepCurrent) result.push(line)
+      continue
+    }
+    if (t === '<!-- versions:end -->') {
+      if (depth > 1 && keepCurrent) result.push(line)
+      depth--
+      if (depth === 0) keepCurrent = false
+      continue
+    }
+
+    if (depth === 1) {
+      const m = t.match(/^<!-- version:"([^"]*)"(:active)? -->$/)
+      if (m) {
+        keepCurrent = !!m[2]
+        continue
+      }
+    }
+
+    if (depth === 0 || keepCurrent) result.push(line)
+  }
+
+  return result.join('\n')
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Serializa um documento para Markdown */
@@ -109,7 +151,7 @@ export function serializeDoc(doc: ProsemirrorNode): string {
 /** Parseia Markdown para documento ProseMirror */
 export function parseMarkdown(md: string): ProsemirrorNode {
   try {
-    return mdParser.parse(md || ' ') ?? schema.topNodeType.createAndFill()!
+    return mdParser.parse(keepActiveVersionOnly(md) || ' ') ?? schema.topNodeType.createAndFill()!
   } catch {
     return schema.topNodeType.createAndFill()!
   }

@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import MarkdownIt from 'markdown-it'
 import styles from './PreviewView.module.css'
 import type { Chapter } from '../../../shared/types'
+import { keepActiveVersionOnly } from '../editor/markdown'
 
 const md = new MarkdownIt({ html: true, linkify: true, typographer: true })
 
@@ -13,7 +14,7 @@ interface PreviewViewProps {
 export function PreviewView({ chapters, chaptersContent }: PreviewViewProps) {
   const html = useMemo(() => {
     return chapters.map(ch => {
-      const content = chaptersContent[ch.id] ?? ''
+      const content = keepActiveVersionOnly(chaptersContent[ch.id] ?? '')
       return { id: ch.id, title: ch.title, html: md.render(content) }
     })
   }, [chapters, chaptersContent])

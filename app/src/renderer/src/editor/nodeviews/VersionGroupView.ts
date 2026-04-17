@@ -1,13 +1,6 @@
 import { Node as PmNode } from 'prosemirror-model'
 import { EditorView, NodeView } from 'prosemirror-view'
 
-/**
- * NodeView for `version_group`.
- *
- * Visual: a subtle colored left-border (like a blockquote).
- * Controls: tiny pill buttons that appear on hover at the top-right.
- * Only the active version's content is visible; others are hidden via CSS.
- */
 export class VersionGroupView implements NodeView {
   dom: HTMLElement
   contentDOM: HTMLElement
@@ -16,6 +9,7 @@ export class VersionGroupView implements NodeView {
   private getPos: () => number | undefined
   private switcher: HTMLElement
   private body: HTMLElement
+  private observer: MutationObserver
 
   constructor(node: PmNode, view: EditorView, getPos: () => number | undefined) {
     this.node = node
@@ -26,19 +20,33 @@ export class VersionGroupView implements NodeView {
     this.dom.className = 'version-group'
     this.dom.setAttribute('data-active', String(node.attrs.activeIndex ?? 0))
 
-    // Pill switcher — floats at top-right, hidden until hover
     this.switcher = document.createElement('div')
     this.switcher.className = 'version-switcher'
     this.switcher.setAttribute('contenteditable', 'false')
     this.dom.appendChild(this.switcher)
 
-    // Body — ProseMirror renders version children here
     this.body = document.createElement('div')
     this.body.className = 'version-body'
     this.dom.appendChild(this.body)
 
     this.contentDOM = this.body
     this.renderSwitcher()
+
+    // Watch for ProseMirror adding/updating version children in contentDOM,
+    // then immediately apply display styles. This is more reliable than
+    // CSS nth-child selectors whose timing with ProseMirror rendering is uncertain.
+    this.observer = new MutationObserver(() => {
+      this.syncVersionDisplay()
+    })
+    this.observer.observe(this.body, { childList: true, subtree: false })
+  }
+
+  private syncVersionDisplay() {
+    const activeIndex = this.node.attrs.activeIndex as number
+    const children = Array.from(this.body.children) as HTMLElement[]
+    children.forEach((el, i) => {
+      el.style.display = i === activeIndex ? '' : 'none'
+    })
   }
 
   private renderSwitcher() {
@@ -66,7 +74,6 @@ export class VersionGroupView implements NodeView {
       this.switcher.appendChild(pill)
     })
 
-    // Add version button
     const addBtn = document.createElement('button')
     addBtn.className = 'v-pill v-pill--add'
     addBtn.textContent = '+'
@@ -78,7 +85,6 @@ export class VersionGroupView implements NodeView {
     })
     this.switcher.appendChild(addBtn)
 
-    // Delete active version (only if more than 1)
     if (this.node.childCount > 1) {
       const delBtn = document.createElement('button')
       delBtn.className = 'v-pill v-pill--del'
@@ -185,10 +191,16 @@ export class VersionGroupView implements NodeView {
     const active = node.attrs.activeIndex as number
     this.dom.setAttribute('data-active', String(active))
     this.renderSwitcher()
+    // ProseMirror updates contentDOM children after update() returns.
+    // syncVersionDisplay() will be triggered by the MutationObserver.
+    // Force it immediately too for already-present children (attr-only updates).
+    this.syncVersionDisplay()
     return true
   }
 
-  destroy() { /* nothing */ }
+  destroy() {
+    this.observer.disconnect()
+  }
 
   stopEvent(event: Event) {
     return this.switcher.contains(event.target as Node)

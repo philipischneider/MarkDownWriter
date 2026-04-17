@@ -3,7 +3,7 @@ import { EditorState } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import { exampleSetup } from 'prosemirror-example-setup'
 import { schema } from '../editor/schema'
-import { mdParser, mdSerializer } from '../editor/markdown'
+import { mdSerializer, parseMarkdown } from '../editor/markdown'
 import { buildInputRules } from '../editor/inputRules'
 import { wordRepeatPlugin } from '../editor/plugins/wordRepeat'
 import { findReplacePlugin, setQuery, findNext, findPrev, replaceCurrent, replaceAll } from '../editor/plugins/findReplace'
@@ -107,6 +107,11 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
 
         const { $from } = state.selection
 
+        // Don't nest version groups — if cursor is already inside one, do nothing
+        for (let d = 0; d <= $from.depth; d++) {
+          if ($from.node(d).type === vgType) return
+        }
+
         // Find the direct child block of the document
         let targetDepth = 1
         for (let d = 1; d <= $from.depth; d++) {
@@ -120,7 +125,6 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
         const blockStart = $from.before(targetDepth)
         const blockEnd = $from.after(targetDepth)
 
-        // Wrap the existing block into version 1
         const v1 = vType.create({ label: 'Versão 1' }, blockNode)
         const v2 = vType.create({ label: 'Versão 2' }, schema.nodes.paragraph.createAndFill()!)
         const group = vgType.create({ activeIndex: 0 }, [v1, v2])
@@ -197,7 +201,7 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
 
       let doc
       try {
-        doc = mdParser.parse(content || ' ') ?? schema.topNodeType.createAndFill()!
+        doc = parseMarkdown(content || ' ')
       } catch {
         doc = schema.topNodeType.createAndFill()!
       }
@@ -263,7 +267,7 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
       if (content === lastContentRef.current) return
       try {
         resetFootnoteCounter()
-        const doc = mdParser.parse(content || ' ') ?? schema.topNodeType.createAndFill()!
+        const doc = parseMarkdown(content || ' ')
         const state = EditorState.create({ doc, plugins: buildPlugins() })
         viewRef.current.updateState(state)
         lastContentRef.current = content
