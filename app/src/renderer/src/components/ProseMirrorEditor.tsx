@@ -108,31 +108,32 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
         const vType = schema.nodes.version
         if (!vgType || !vType) return
 
-        const { $from } = state.selection
-
-        // Don't nest version groups — if cursor is already inside one, do nothing
-        for (let d = 0; d <= $from.depth; d++) {
-          if ($from.node(d).type === vgType) return
+        // Resolve a position guaranteed to be inside a top-level block (depth >= 1).
+        // NodeSelection / AllSelection leave $from at depth 0 (doc level), which
+        // makes $from.after(1) crash by reading past the end of the path array.
+        let $pos = state.selection.$from
+        if ($pos.depth === 0) {
+          const inner = state.selection.from + 1
+          if (inner > state.doc.content.size) return
+          $pos = state.doc.resolve(inner)
+          if ($pos.depth === 0) return
         }
 
-        // Find the direct child block of the document
-        let targetDepth = 1
-        for (let d = 1; d <= $from.depth; d++) {
-          if ($from.node(d - 1).type === schema.nodes.doc) {
-            targetDepth = d
-            break
-          }
+        // Don't nest version groups
+        for (let d = 0; d <= $pos.depth; d++) {
+          if ($pos.node(d).type === vgType) return
         }
 
-        const blockNode = $from.node(targetDepth)
-        const blockStart = $from.before(targetDepth)
-        const blockEnd = $from.after(targetDepth)
+        const blockNode = $pos.node(1)
+        const blockStart = $pos.before(1)
+        const blockEnd = $pos.after(1)
 
-        const v1 = vType.create({ label: 'Versão 1' }, blockNode)
-        const v2 = vType.create({ label: 'Versão 2' }, schema.nodes.paragraph.createAndFill()!)
-        const group = vgType.create({ activeIndex: 0 }, [v1, v2])
-
-        dispatch(state.tr.replaceWith(blockStart, blockEnd, group))
+        try {
+          const v1 = vType.create({ label: 'Versão 1' }, blockNode)
+          const v2 = vType.create({ label: 'Versão 2' }, schema.nodes.paragraph.createAndFill()!)
+          const group = vgType.create({ activeIndex: 0 }, [v1, v2])
+          dispatch(state.tr.replaceWith(blockStart, blockEnd, group))
+        } catch { return }
         view.focus()
       },
 

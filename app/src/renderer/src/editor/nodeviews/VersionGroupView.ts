@@ -206,9 +206,9 @@ export class VersionGroupView implements NodeView {
     return this.switcher.contains(event.target as Node)
   }
 
-  ignoreMutation(record: MutationRecord | { type: 'selection' }) {
-    if ('target' in record && this.switcher.contains(record.target as Node)) return true
-    if ('type' in record && record.type === 'attributes') return true
-    return false
+  ignoreMutation() {
+    // ProseMirror fully manages contentDOM; switcher is non-editable.
+    // Always ignore to prevent re-parse loops when a new group is inserted.
+    return true
   }
 }
