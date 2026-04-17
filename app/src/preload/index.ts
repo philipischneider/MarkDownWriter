@@ -51,6 +51,19 @@ const api = {
   dialog: {
     chooseDir: () =>
       ipcRenderer.invoke('dialog:choose-dir'),
+  },
+
+  // Exportação Pandoc
+  export: {
+    checkPandoc: () =>
+      ipcRenderer.invoke('export:check-pandoc') as Promise<{ available: boolean; version: string | null }>,
+    run: (opts: {
+      format: string
+      projectDir: string
+      projectTitle: string
+      author: string
+      chapterIds: string[]
+    }) => ipcRenderer.invoke('export:run', opts) as Promise<{ success: boolean; filePath?: string; reason?: string }>
   }
 }
 

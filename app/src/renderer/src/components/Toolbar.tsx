@@ -12,6 +12,7 @@ interface ToolbarProps {
   onTogglePanel: () => void
   onToggleEntityPanel: () => void
   onSave: () => void
+  onExport: () => void
   onThemeToggle: () => void
   onFontSizeIncrease: () => void
   onFontSizeDecrease: () => void
@@ -21,7 +22,7 @@ export function Toolbar({
   projectTitle, theme, fontSize, isDirty, saving,
   panelOpen, entityPanelOpen,
   onTogglePanel, onToggleEntityPanel,
-  onSave, onThemeToggle,
+  onSave, onExport, onThemeToggle,
   onFontSizeIncrease, onFontSizeDecrease
 }: ToolbarProps) {
   return (
@@ -54,6 +55,9 @@ export function Toolbar({
           title="Painel de entidades"
         >
           @
+        </button>
+        <button className={styles.iconBtn} onClick={onExport} title="Exportar (PDF, DOCX, EPUB…)">
+          ⬆
         </button>
         <button className={styles.iconBtn} onClick={onSave} title="Salvar (Ctrl+S)">
           ↓

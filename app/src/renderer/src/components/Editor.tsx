@@ -4,6 +4,7 @@ import { ProseMirrorEditor, EditorCommands } from './ProseMirrorEditor'
 import { Toolbar } from './Toolbar'
 import { StatusBar } from './StatusBar'
 import { EntityPanel, EntityPicker } from './EntityPanel'
+import { ExportDialog } from './ExportDialog'
 import { countWords } from '../editor/plugins/wordRepeat'
 import type { useProjectStore } from '../store/projectStore'
 import type { Chapter, Entity } from '../../../shared/types'
@@ -26,6 +27,7 @@ export function Editor({ store, onSave }: EditorProps) {
   const [saving, setSaving] = useState(false)
   const [pickerVisible, setPickerVisible] = useState(false)
   const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 })
+  const [exportOpen, setExportOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Map chapterId → editor command ref
@@ -182,6 +184,7 @@ export function Editor({ store, onSave }: EditorProps) {
         onTogglePanel={() => setPanelOpen(v => !v)}
         onToggleEntityPanel={() => setEntityPanelOpen(v => !v)}
         onSave={handleSave}
+        onExport={() => setExportOpen(true)}
         onThemeToggle={handleThemeToggle}
         onFontSizeIncrease={() => handleFontSizeChange(1)}
         onFontSizeDecrease={() => handleFontSizeChange(-1)}
@@ -252,6 +255,16 @@ export function Editor({ store, onSave }: EditorProps) {
         activeChapterWords={activeChapterId ? (wordCounts[activeChapterId] ?? 0) : 0}
         totalWords={totalWords}
       />
+
+      {exportOpen && projectDir && (
+        <ExportDialog
+          projectTitle={project.title}
+          author={project.author}
+          projectDir={projectDir}
+          chapters={project.chapters}
+          onClose={() => setExportOpen(false)}
+        />
+      )}
 
       {pickerVisible && (
         <EntityPicker
