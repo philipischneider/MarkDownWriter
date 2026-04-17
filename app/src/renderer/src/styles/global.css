@@ -264,21 +264,29 @@ span.comment-mark {
   outline: none;
 }
 
-/* Version body — ProseMirror renders version children here */
-.version-body { }
-
-/* Hide non-active versions via data-active attribute on .version-group */
-.version-body > .version { display: none; }
-.version-group[data-active="0"] .version-body > .version:nth-child(1) { display: block; }
-.version-group[data-active="1"] .version-body > .version:nth-child(2) { display: block; }
-.version-group[data-active="2"] .version-body > .version:nth-child(3) { display: block; }
-.version-group[data-active="3"] .version-body > .version:nth-child(4) { display: block; }
-.version-group[data-active="4"] .version-body > .version:nth-child(5) { display: block; }
-.version-group[data-active="5"] .version-body > .version:nth-child(6) { display: block; }
-.version-group[data-active="6"] .version-body > .version:nth-child(7) { display: block; }
-.version-group[data-active="7"] .version-body > .version:nth-child(8) { display: block; }
-.version-group[data-active="8"] .version-body > .version:nth-child(9) { display: block; }
-.version-group[data-active="9"] .version-body > .version:nth-child(10) { display: block; }
+/* Hide non-active versions in both the custom NodeView and the schema DOM fallback */
+.version-body > .version,
+.version-group > .version { display: none; }
+.version-group[data-active="0"] .version-body > .version:nth-child(1),
+.version-group[data-active="0"] > .version:nth-child(1) { display: block; }
+.version-group[data-active="1"] .version-body > .version:nth-child(2),
+.version-group[data-active="1"] > .version:nth-child(2) { display: block; }
+.version-group[data-active="2"] .version-body > .version:nth-child(3),
+.version-group[data-active="2"] > .version:nth-child(3) { display: block; }
+.version-group[data-active="3"] .version-body > .version:nth-child(4),
+.version-group[data-active="3"] > .version:nth-child(4) { display: block; }
+.version-group[data-active="4"] .version-body > .version:nth-child(5),
+.version-group[data-active="4"] > .version:nth-child(5) { display: block; }
+.version-group[data-active="5"] .version-body > .version:nth-child(6),
+.version-group[data-active="5"] > .version:nth-child(6) { display: block; }
+.version-group[data-active="6"] .version-body > .version:nth-child(7),
+.version-group[data-active="6"] > .version:nth-child(7) { display: block; }
+.version-group[data-active="7"] .version-body > .version:nth-child(8),
+.version-group[data-active="7"] > .version:nth-child(8) { display: block; }
+.version-group[data-active="8"] .version-body > .version:nth-child(9),
+.version-group[data-active="8"] > .version:nth-child(9) { display: block; }
+.version-group[data-active="9"] .version-body > .version:nth-child(10),
+.version-group[data-active="9"] > .version:nth-child(10) { display: block; }
 
 /* ─── Marcação de entidades ──────────────────────────────────────────────── */
 

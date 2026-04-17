@@ -1,5 +1,5 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
-import { EditorState } from 'prosemirror-state'
+import { EditorState, TextSelection } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import { exampleSetup } from 'prosemirror-example-setup'
 import { schema } from '../editor/schema'
@@ -64,7 +64,6 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
     onFocusRef.current = onFocus
     onSplitRef.current = onSplitRequest
 
-    // Expose commands to parent
     useImperativeHandle(ref, () => ({
       insertFootnote() {
         const view = viewRef.current
@@ -75,7 +74,6 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
         const id = 'fn-' + Math.random().toString(36).slice(2, 8)
         const node = fnType.create({ id, content: '' })
         dispatch(state.tr.replaceSelectionWith(node))
-        // Auto-open popup after insertion
         requestAnimationFrame(() => {
           const el = view.dom.querySelector(`footnote[data-id="${id}"]`) as HTMLElement | null
           el?.click()
@@ -92,7 +90,6 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
         if (from === to) return
         const id = 'c-' + Math.random().toString(36).slice(2, 8)
         dispatch(state.tr.addMark(from, to, markType.create({ id, text: '' })))
-        // Auto-open popup after mark is applied
         requestAnimationFrame(() => {
           const el = view.dom.querySelector(`.comment-mark[data-id="${id}"]`) as HTMLElement | null
           el?.click()
@@ -108,9 +105,6 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
         const vType = schema.nodes.version
         if (!vgType || !vType) return
 
-        // Resolve a position guaranteed to be inside a top-level block (depth >= 1).
-        // NodeSelection / AllSelection leave $from at depth 0 (doc level), which
-        // makes $from.after(1) crash by reading past the end of the path array.
         let $pos = state.selection.$from
         if ($pos.depth === 0) {
           const inner = state.selection.from + 1
@@ -119,21 +113,35 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
           if ($pos.depth === 0) return
         }
 
-        // Don't nest version groups
         for (let d = 0; d <= $pos.depth; d++) {
           if ($pos.node(d).type === vgType) return
         }
 
-        const blockNode = $pos.node(1)
-        const blockStart = $pos.before(1)
-        const blockEnd = $pos.after(1)
+        let blockDepth = $pos.depth
+        while (blockDepth > 0 && !$pos.node(blockDepth).isTextblock) {
+          blockDepth--
+        }
+        if (blockDepth === 0) return
+
+        const blockNode = $pos.node(blockDepth)
+        const blockStart = $pos.before(blockDepth)
+        const blockEnd = $pos.after(blockDepth)
 
         try {
+          const paragraph = schema.nodes.paragraph.createAndFill()
+          if (!paragraph) return
+
           const v1 = vType.create({ label: 'Versão 1' }, blockNode)
-          const v2 = vType.create({ label: 'Versão 2' }, schema.nodes.paragraph.createAndFill()!)
+          const v2 = vType.create({ label: 'Versão 2' }, paragraph)
           const group = vgType.create({ activeIndex: 0 }, [v1, v2])
-          dispatch(state.tr.replaceWith(blockStart, blockEnd, group))
-        } catch { return }
+          const tr = state.tr.replaceWith(blockStart, blockEnd, group)
+          const cursorPos = Math.min(blockStart + 2, tr.doc.content.size)
+          tr.setSelection(TextSelection.near(tr.doc.resolve(cursorPos)))
+          dispatch(tr.scrollIntoView())
+        } catch {
+          return
+        }
+
         view.focus()
       },
 
@@ -200,7 +208,6 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
       }
     }), [])
 
-    // Create / recreate editor when chapter changes
     useEffect(() => {
       if (!mountRef.current) return
 
@@ -232,11 +239,16 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
               const md = mdSerializer.serialize(newState.doc)
               lastContentRef.current = md
               onChangeRef.current(md)
-            } catch { /* ignore serialization errors */ }
+            } catch {
+              /* ignore serialization errors */
+            }
           }
         },
         handleDOMEvents: {
-          focus: () => { onFocusRef.current(); return false },
+          focus: () => {
+            onFocusRef.current()
+            return false
+          },
           keydown: (view, event) => {
             if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && onSplitRef.current) {
               event.preventDefault()
@@ -265,10 +277,12 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
       })
 
       viewRef.current = view
-      return () => { view.destroy(); viewRef.current = null }
+      return () => {
+        view.destroy()
+        viewRef.current = null
+      }
     }, [chapterId])
 
-    // Sync external content changes (e.g. backup restore)
     useEffect(() => {
       if (!viewRef.current) return
       if (content === lastContentRef.current) return
@@ -278,7 +292,9 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
         const state = EditorState.create({ doc, plugins: buildPlugins() })
         viewRef.current.updateState(state)
         lastContentRef.current = content
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }, [content])
 
     return <div ref={mountRef} className={styles.editor} />

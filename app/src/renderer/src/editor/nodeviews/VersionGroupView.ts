@@ -9,7 +9,6 @@ export class VersionGroupView implements NodeView {
   private getPos: () => number | undefined
   private switcher: HTMLElement
   private body: HTMLElement
-  private observer: MutationObserver
 
   constructor(node: PmNode, view: EditorView, getPos: () => number | undefined) {
     this.node = node
@@ -31,22 +30,6 @@ export class VersionGroupView implements NodeView {
 
     this.contentDOM = this.body
     this.renderSwitcher()
-
-    // Watch for ProseMirror adding/updating version children in contentDOM,
-    // then immediately apply display styles. This is more reliable than
-    // CSS nth-child selectors whose timing with ProseMirror rendering is uncertain.
-    this.observer = new MutationObserver(() => {
-      this.syncVersionDisplay()
-    })
-    this.observer.observe(this.body, { childList: true, subtree: false })
-  }
-
-  private syncVersionDisplay() {
-    const activeIndex = this.node.attrs.activeIndex as number
-    const children = Array.from(this.body.children) as HTMLElement[]
-    children.forEach((el, i) => {
-      el.style.display = i === activeIndex ? '' : 'none'
-    })
   }
 
   private renderSwitcher() {
@@ -191,24 +174,19 @@ export class VersionGroupView implements NodeView {
     const active = node.attrs.activeIndex as number
     this.dom.setAttribute('data-active', String(active))
     this.renderSwitcher()
-    // ProseMirror updates contentDOM children after update() returns.
-    // syncVersionDisplay() will be triggered by the MutationObserver.
-    // Force it immediately too for already-present children (attr-only updates).
-    this.syncVersionDisplay()
     return true
   }
 
   destroy() {
-    this.observer.disconnect()
+    // No-op
   }
 
   stopEvent(event: Event) {
     return this.switcher.contains(event.target as Node)
   }
 
-  ignoreMutation() {
-    // ProseMirror fully manages contentDOM; switcher is non-editable.
-    // Always ignore to prevent re-parse loops when a new group is inserted.
-    return true
+  ignoreMutation(mutation: MutationRecord | { type: 'selection'; target: Node }) {
+    if (mutation.type === 'selection') return false
+    return this.switcher.contains(mutation.target)
   }
 }
