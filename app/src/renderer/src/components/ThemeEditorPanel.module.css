@@ -184,3 +184,34 @@
   width: 100%;
 }
 .resetBtn:hover { border-color: var(--accent); color: var(--text-primary); }
+
+/* ── Color palette ─────────────────────────────────────────────────────────── */
+
+.colorRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.colorSwatches {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.1s;
+  padding: 0;
+  outline: none;
+  flex-shrink: 0;
+}
+.swatch:hover { transform: scale(1.2); }
+.swatch.swatchActive {
+  border-color: var(--text-primary);
+  transform: scale(1.15);
+}

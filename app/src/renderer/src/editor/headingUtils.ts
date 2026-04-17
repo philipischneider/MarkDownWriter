@@ -34,6 +34,26 @@ export function extractHeadings(markdown: string, chapterId: string): HeadingEnt
   return entries
 }
 
+// Compute the hierarchical outline number string for each heading in the array.
+// chapterIndex is 1-based. Returns an array of strings like "2.1", "2.1.3", etc.
+export function computeHeadingNumbers(chapterIndex: number, headings: HeadingEntry[]): string[] {
+  const numbers: string[] = []
+  let h1 = 0, h2 = 0, h3 = 0
+  for (const heading of headings) {
+    if (heading.level === 1) {
+      h1++; h2 = 0; h3 = 0
+      numbers.push(`${chapterIndex}.${h1}`)
+    } else if (heading.level === 2) {
+      h2++; h3 = 0
+      numbers.push(`${chapterIndex}.${h1}.${h2}`)
+    } else {
+      h3++
+      numbers.push(`${chapterIndex}.${h1}.${h2}.${h3}`)
+    }
+  }
+  return numbers
+}
+
 // Move section at fromIdx to just before toIdx (or to end if toIdx === headings.length).
 // A "section" is the heading line plus all content until the next heading at same or higher level.
 export function moveSection(

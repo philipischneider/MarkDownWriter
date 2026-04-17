@@ -47,6 +47,15 @@ body { overflow: hidden; }
   --status-final-text:        #4caf7d;
   --status-archived-bg:       rgba(80,80,80,0.15);
   --status-archived-text:     #555;
+
+  /* Paleta de cores para headings */
+  --hcolor-default:    var(--text-primary);
+  --hcolor-azul:       #5b8dee;
+  --hcolor-violeta:    #9b70e0;
+  --hcolor-coral:      #e07a5f;
+  --hcolor-dourado:    #c9a93a;
+  --hcolor-esmeralda:  #4caf7d;
+  --hcolor-carmim:     #e05252;
 }
 
 /* Tema claro */
@@ -78,6 +87,15 @@ body { overflow: hidden; }
   --status-final-text:        #2e7d4f;
   --status-archived-bg:       rgba(80,80,80,0.08);
   --status-archived-text:     #aaa;
+
+  /* Paleta de cores para headings */
+  --hcolor-default:    var(--text-primary);
+  --hcolor-azul:       #3a6fd8;
+  --hcolor-violeta:    #7c52d4;
+  --hcolor-coral:      #bf5535;
+  --hcolor-dourado:    #9a7818;
+  --hcolor-esmeralda:  #2e7d4f;
+  --hcolor-carmim:     #c0392b;
 }
 
 body {
@@ -183,17 +201,30 @@ span.comment-mark {
   border-bottom-color: rgba(190, 140, 0, 0.55);
 }
 
-/* ─── Version groups — subtle left-border design ─────────────────────────── */
+/* ─── Version groups — barra azul na margem esquerda (fora do texto) ────── */
 
 .version-group {
   position: relative;
-  padding-left: 1em;
-  border-left: 3px solid var(--accent);
   margin: 0.2em 0;
   opacity: 0.92;
   transition: opacity 0.15s;
 }
 .version-group:hover { opacity: 1; }
+
+/* Barra azul posicionada fora da área de texto, na margem esquerda */
+.version-group::before {
+  content: '';
+  position: absolute;
+  right: calc(100% + 0.6em);
+  top: 0.1em;
+  bottom: 0.1em;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+.version-group:hover::before { opacity: 1; }
 
 /* Pill switcher — hidden until hover */
 .version-switcher {

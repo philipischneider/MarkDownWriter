@@ -14,6 +14,7 @@ interface ToolbarProps {
   ollamaPanelOpen: boolean
   typographyPanelOpen: boolean
   grammarEnabled: boolean
+  numberingEnabled: boolean
   focusMode: boolean
   viewMode: ViewMode
   onTogglePanel: () => void
@@ -21,6 +22,7 @@ interface ToolbarProps {
   onToggleOllamaPanel: () => void
   onToggleTypographyPanel: () => void
   onToggleGrammar: () => void
+  onToggleNumbering: () => void
   onToggleFocusMode: () => void
   onSetViewMode: (mode: ViewMode) => void
   onSave: () => void
@@ -34,9 +36,9 @@ interface ToolbarProps {
 
 export function Toolbar({
   projectTitle, theme, fontSize, isDirty, saving,
-  panelOpen, entityPanelOpen, ollamaPanelOpen, typographyPanelOpen, grammarEnabled, focusMode, viewMode,
+  panelOpen, entityPanelOpen, ollamaPanelOpen, typographyPanelOpen, grammarEnabled, numberingEnabled, focusMode, viewMode,
   onTogglePanel, onToggleEntityPanel, onToggleOllamaPanel, onToggleTypographyPanel,
-  onToggleGrammar, onToggleFocusMode, onSetViewMode,
+  onToggleGrammar, onToggleNumbering, onToggleFocusMode, onSetViewMode,
   onSave, onExport, onThemeToggle,
   onFontSizeIncrease, onFontSizeDecrease,
   onFind, onEditProjectInfo
@@ -100,6 +102,13 @@ export function Toolbar({
         </button>
         <button className={styles.iconBtn} onClick={onFind} title="Buscar e substituir (Ctrl+F)">
           ⌕
+        </button>
+        <button
+          className={styles.iconBtn + (numberingEnabled ? ' ' + styles.iconBtnActive : '')}
+          onClick={onToggleNumbering}
+          title="Numeração hierárquica de seções"
+        >
+          §
         </button>
         <button
           className={styles.iconBtn + (grammarEnabled ? ' ' + styles.iconBtnActive : '')}

@@ -1,6 +1,7 @@
 export type ChapterStatus = 'rascunho' | 'provisório' | 'final' | 'arquivado'
 export type EntityType = 'characters' | 'places' | 'organizations' | 'other'
 export type Theme = 'light' | 'dark'
+export type HeadingColorName = 'default' | 'azul' | 'violeta' | 'coral' | 'dourado' | 'esmeralda' | 'carmim'
 
 export interface Chapter {
   id: string
@@ -40,6 +41,9 @@ export interface TypographySettings {
   h1Size: number              // em units, e.g. 1.6
   h2Size: number
   h3Size: number
+  h1Color: HeadingColorName
+  h2Color: HeadingColorName
+  h3Color: HeadingColorName
 }
 
 export const DEFAULT_TYPOGRAPHY: TypographySettings = {
@@ -51,6 +55,9 @@ export const DEFAULT_TYPOGRAPHY: TypographySettings = {
   h1Size: 1.6,
   h2Size: 1.3,
   h3Size: 1.1,
+  h1Color: 'default',
+  h2Color: 'default',
+  h3Color: 'default',
 }
 
 export interface ProjectSettings {
@@ -60,6 +67,7 @@ export interface ProjectSettings {
   theme: Theme
   fontSize: number
   typography: TypographySettings
+  numberingEnabled: boolean
 }
 
 export interface Project {

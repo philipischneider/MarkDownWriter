@@ -8,18 +8,20 @@ import { buildInputRules } from '../editor/inputRules'
 import { wordRepeatPlugin } from '../editor/plugins/wordRepeat'
 import { findReplacePlugin, setQuery, findNext, findPrev, replaceCurrent, replaceAll } from '../editor/plugins/findReplace'
 import { languageToolPlugin, setLtEnabled } from '../editor/plugins/languageTool'
+import { outlinePlugin, outlinePluginKey } from '../editor/outlinePlugin'
 import { FootnoteView, resetFootnoteCounter } from '../editor/nodeviews/FootnoteView'
 import { CommentView } from '../editor/nodeviews/CommentView'
 import { VersionGroupView } from '../editor/nodeviews/VersionGroupView'
 import styles from './ProseMirrorEditor.module.css'
 
-function buildPlugins() {
+function buildPlugins(chapterIndex: number, numberingEnabled: boolean) {
   return [
     ...exampleSetup({ schema, menuBar: false }),
     buildInputRules(schema),
     wordRepeatPlugin(),
     findReplacePlugin(),
-    languageToolPlugin()
+    languageToolPlugin(),
+    outlinePlugin(chapterIndex, numberingEnabled)
   ]
 }
 
@@ -43,6 +45,8 @@ export interface EditorCommands {
 
 interface ProseMirrorEditorProps {
   chapterId: string
+  chapterIndex: number
+  numberingEnabled: boolean
   content: string
   onChange: (content: string) => void
   onFocus: () => void
@@ -51,7 +55,7 @@ interface ProseMirrorEditorProps {
 
 export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorProps>(
   function ProseMirrorEditor(
-    { chapterId, content, onChange, onFocus, onSplitRequest },
+    { chapterId, chapterIndex, numberingEnabled, content, onChange, onFocus, onSplitRequest },
     ref
   ) {
     const mountRef = useRef<HTMLDivElement>(null)
@@ -225,6 +229,14 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
       }
     }), [])
 
+    // Update outline plugin when numbering or chapter index changes (without recreating editor)
+    useEffect(() => {
+      if (!viewRef.current) return
+      const tr = viewRef.current.state.tr
+      tr.setMeta(outlinePluginKey, { chapterIndex, enabled: numberingEnabled })
+      viewRef.current.dispatch(tr)
+    }, [numberingEnabled, chapterIndex])
+
     useEffect(() => {
       if (!mountRef.current) return
 
@@ -237,7 +249,7 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
         doc = schema.topNodeType.createAndFill()!
       }
 
-      const state = EditorState.create({ doc, plugins: buildPlugins() })
+      const state = EditorState.create({ doc, plugins: buildPlugins(chapterIndex, numberingEnabled) })
 
       const view = new EditorView(mountRef.current, {
         state,
@@ -306,7 +318,7 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
       try {
         resetFootnoteCounter()
         const doc = parseMarkdown(content || ' ')
-        const state = EditorState.create({ doc, plugins: buildPlugins() })
+        const state = EditorState.create({ doc, plugins: buildPlugins(chapterIndex, numberingEnabled) })
         viewRef.current.updateState(state)
         lastContentRef.current = content
       } catch {
@@ -314,6 +326,6 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
       }
     }, [content])
 
-    return <div ref={mountRef} className={styles.editor} />
+    return <div ref={mountRef} className={`${styles.editor}${numberingEnabled ? ' ' + styles.numberingActive : ''}`} />
   }
 )

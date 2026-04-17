@@ -193,6 +193,22 @@
   flex-shrink: 0;
 }
 
+.chapterNum {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  flex-shrink: 0;
+  min-width: 18px;
+}
+
+.headingNum {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  flex-shrink: 0;
+  min-width: 28px;
+}
+
 /* ── Heading list ─────────────────────────────────────────────────────────── */
 
 .headingList {

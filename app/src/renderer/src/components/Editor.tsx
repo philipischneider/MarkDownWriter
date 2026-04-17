@@ -197,6 +197,13 @@ export function Editor({ store, onSave }: EditorProps) {
     }
   }
 
+  const handleToggleNumbering = () => {
+    updateProject(p => ({
+      ...p,
+      settings: { ...p.settings, numberingEnabled: !(p.settings.numberingEnabled ?? false) }
+    }))
+  }
+
   const handleTypographyChange = (typography: typeof DEFAULT_TYPOGRAPHY) => {
     updateProject(p => ({ ...p, settings: { ...p.settings, typography } }))
   }
@@ -233,9 +240,17 @@ export function Editor({ store, onSave }: EditorProps) {
   }
 
   const typography = project.settings.typography ?? DEFAULT_TYPOGRAPHY
+  const numberingEnabled = project.settings.numberingEnabled ?? false
+
+  // CSS variables for heading colors (theme-aware via --hcolor-* CSS vars)
+  const headingColorVars = {
+    '--heading-h1-color': `var(--hcolor-${typography.h1Color ?? 'default'})`,
+    '--heading-h2-color': `var(--hcolor-${typography.h2Color ?? 'default'})`,
+    '--heading-h3-color': `var(--hcolor-${typography.h3Color ?? 'default'})`,
+  } as React.CSSProperties
 
   return (
-    <div className={styles.shell + (focusMode ? ' ' + styles.focusMode : '')}>
+    <div className={styles.shell + (focusMode ? ' ' + styles.focusMode : '')} style={headingColorVars}>
       {!focusMode && (
         <Toolbar
           projectTitle={project.title}
@@ -248,6 +263,7 @@ export function Editor({ store, onSave }: EditorProps) {
           ollamaPanelOpen={ollamaPanelOpen}
           typographyPanelOpen={typographyPanelOpen}
           grammarEnabled={grammarEnabled}
+          numberingEnabled={numberingEnabled}
           focusMode={focusMode}
           viewMode={viewMode}
           onTogglePanel={() => setPanelOpen(v => !v)}
@@ -255,6 +271,7 @@ export function Editor({ store, onSave }: EditorProps) {
           onToggleOllamaPanel={() => setOllamaPanelOpen(v => !v)}
           onToggleTypographyPanel={() => setTypographyPanelOpen(v => !v)}
           onToggleGrammar={handleToggleGrammar}
+          onToggleNumbering={handleToggleNumbering}
           onToggleFocusMode={() => setFocusMode(v => !v)}
           onSetViewMode={setViewMode}
           onSave={handleSave}
@@ -294,6 +311,7 @@ export function Editor({ store, onSave }: EditorProps) {
             chapters={project.chapters}
             activeChapterId={activeChapterId}
             chaptersContent={chaptersContent}
+            numberingEnabled={numberingEnabled}
             onSelectChapter={handleScrollToChapter}
             onScrollToHeading={handleScrollToHeading}
             onReorderSections={handleReorderSections}
@@ -333,6 +351,7 @@ export function Editor({ store, onSave }: EditorProps) {
                 <div key={chapter.id} id={`chapter-${chapter.id}`} className={styles.chapterBlock}>
                   <ChapterHeader
                     chapter={chapter}
+                    chapterNumber={numberingEnabled ? index + 1 : undefined}
                     isFirst={index === 0}
                     onSplit={(before, after) => handleSplitChapter(chapter.id, before, after)}
                   />
@@ -346,6 +365,8 @@ export function Editor({ store, onSave }: EditorProps) {
                       }
                     }}
                     chapterId={chapter.id}
+                    chapterIndex={index + 1}
+                    numberingEnabled={numberingEnabled}
                     content={chaptersContent[chapter.id] ?? ''}
                     onChange={content => updateChapterContent(chapter.id, content)}
                     onFocus={() => setActiveChapter(chapter.id)}
@@ -486,15 +507,20 @@ function FormattingBar({ onInsertFootnote, onInsertComment, onInsertVersionGroup
 
 function ChapterHeader({
   chapter,
+  chapterNumber,
   isFirst,
   onSplit: _onSplit
 }: {
   chapter: Chapter
+  chapterNumber?: number
   isFirst: boolean
   onSplit: (before: string, after: string) => void
 }) {
   return (
     <div className={isFirst ? styles.firstChapterHeader : styles.chapterDivider}>
+      {chapterNumber !== undefined && (
+        <span className={styles.chapterNumber}>{chapterNumber}.</span>
+      )}
       <span className={styles.chapterLabel}>{chapter.title}</span>
       <span className={styles.chapterStatus} data-status={chapter.status}>
         {chapter.status}

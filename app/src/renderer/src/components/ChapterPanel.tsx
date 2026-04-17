@@ -1,12 +1,13 @@
 import { useState, useRef, useMemo } from 'react'
 import type { Chapter, ChapterStatus } from '../../../shared/types'
-import { extractHeadings } from '../editor/headingUtils'
+import { extractHeadings, computeHeadingNumbers } from '../editor/headingUtils'
 import styles from './ChapterPanel.module.css'
 
 interface ChapterPanelProps {
   chapters: Chapter[]
   activeChapterId: string | null
   chaptersContent: Record<string, string>
+  numberingEnabled: boolean
   onSelectChapter: (id: string) => void
   onScrollToHeading: (chapterId: string, index: number) => void
   onReorderSections: (chapterId: string, fromIdx: number, toIdx: number) => void
@@ -23,7 +24,7 @@ const STATUS_OPTIONS: ChapterStatus[] = ['rascunho', 'provisório', 'final', 'ar
 const HEADING_INDENT: Record<number, number> = { 1: 20, 2: 30, 3: 40 }
 
 export function ChapterPanel({
-  chapters, activeChapterId, chaptersContent,
+  chapters, activeChapterId, chaptersContent, numberingEnabled,
   onSelectChapter, onScrollToHeading, onReorderSections,
   onAddChapter, onDeleteChapter, onRenameChapter,
   onReorder, onStatusChange, onMergeWithPrevious
@@ -41,7 +42,7 @@ export function ChapterPanel({
   // Heading drag state
   const dragHeadingFrom = useRef<{ chapterId: string; idx: number } | null>(null)
 
-  // Compute headings for each chapter
+  // Compute headings and their outline numbers for each chapter
   const chapterHeadings = useMemo(() => {
     const result: Record<string, ReturnType<typeof extractHeadings>> = {}
     for (const chapter of chapters) {
@@ -50,6 +51,14 @@ export function ChapterPanel({
     }
     return result
   }, [chapters, chaptersContent])
+
+  const headingNumbers = useMemo(() => {
+    const result: Record<string, string[]> = {}
+    chapters.forEach((chapter, idx) => {
+      result[chapter.id] = computeHeadingNumbers(idx + 1, chapterHeadings[chapter.id] ?? [])
+    })
+    return result
+  }, [chapters, chapterHeadings])
 
   // ── Chapter drag ──────────────────────────────────────────────────────────
 
@@ -183,6 +192,10 @@ export function ChapterPanel({
 
                 <span className={styles.dragHandle} title="Arrastar">⠿</span>
 
+                {numberingEnabled && (
+                  <span className={styles.chapterNum}>{index + 1}.</span>
+                )}
+
                 {editingId === chapter.id ? (
                   <input
                     className={styles.titleInput}
@@ -223,6 +236,11 @@ export function ChapterPanel({
                         onClick={e => { e.stopPropagation(); onScrollToHeading(chapter.id, hIdx) }}
                       >
                         <span className={styles.headingHandle}>⠿</span>
+                        {numberingEnabled && (
+                          <span className={styles.headingNum}>
+                            {headingNumbers[chapter.id]?.[hIdx] ?? ''}
+                          </span>
+                        )}
                         <span className={styles.headingTitle} data-level={heading.level}>
                           {heading.text}
                         </span>

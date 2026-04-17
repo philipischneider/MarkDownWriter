@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import styles from './ThemeEditorPanel.module.css'
-import type { TypographySettings } from '../../../shared/types'
+import type { TypographySettings, HeadingColorName } from '../../../shared/types'
 import { DEFAULT_TYPOGRAPHY } from '../../../shared/types'
 
 const STORAGE_KEY = 'mw_typography_themes'
@@ -130,6 +130,12 @@ export function ThemeEditorPanel({ typography, onChange }: ThemeEditorPanelProps
           />
         </Section>
 
+        <Section label="Cores dos títulos">
+          <ColorRow label="H1" value={typography.h1Color ?? 'default'} onChange={v => set('h1Color', v)} />
+          <ColorRow label="H2" value={typography.h2Color ?? 'default'} onChange={v => set('h2Color', v)} />
+          <ColorRow label="H3" value={typography.h3Color ?? 'default'} onChange={v => set('h3Color', v)} />
+        </Section>
+
         <Section label="Temas salvos">
           <div className={styles.saveRow}>
             <input
@@ -180,6 +186,43 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
     <div className={styles.row}>
       <span className={styles.rowLabel}>{label}</span>
       <div className={styles.rowControl}>{children}</div>
+    </div>
+  )
+}
+
+// ─── Color palette ──────────────────────────────────────────────────────────
+
+const COLOR_PALETTE: { name: HeadingColorName; label: string; cssVar: string }[] = [
+  { name: 'default',    label: 'Padrão',    cssVar: 'var(--text-primary)' },
+  { name: 'azul',       label: 'Azul',      cssVar: 'var(--hcolor-azul)' },
+  { name: 'violeta',    label: 'Violeta',   cssVar: 'var(--hcolor-violeta)' },
+  { name: 'coral',      label: 'Coral',     cssVar: 'var(--hcolor-coral)' },
+  { name: 'dourado',    label: 'Dourado',   cssVar: 'var(--hcolor-dourado)' },
+  { name: 'esmeralda',  label: 'Esmeralda', cssVar: 'var(--hcolor-esmeralda)' },
+  { name: 'carmim',     label: 'Carmim',    cssVar: 'var(--hcolor-carmim)' },
+]
+
+function ColorRow({
+  label, value, onChange
+}: {
+  label: string
+  value: HeadingColorName
+  onChange: (v: HeadingColorName) => void
+}) {
+  return (
+    <div className={styles.colorRow}>
+      <span className={styles.rowLabel}>{label}</span>
+      <div className={styles.colorSwatches}>
+        {COLOR_PALETTE.map(c => (
+          <button
+            key={c.name}
+            className={`${styles.swatch} ${value === c.name ? styles.swatchActive : ''}`}
+            style={{ background: c.cssVar }}
+            title={c.label}
+            onClick={() => onChange(c.name)}
+          />
+        ))}
+      </div>
     </div>
   )
 }
