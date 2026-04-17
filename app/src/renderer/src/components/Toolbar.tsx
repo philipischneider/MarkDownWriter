@@ -9,8 +9,10 @@ interface ToolbarProps {
   saving: boolean
   panelOpen: boolean
   entityPanelOpen: boolean
+  ollamaPanelOpen: boolean
   onTogglePanel: () => void
   onToggleEntityPanel: () => void
+  onToggleOllamaPanel: () => void
   onSave: () => void
   onExport: () => void
   onThemeToggle: () => void
@@ -20,8 +22,8 @@ interface ToolbarProps {
 
 export function Toolbar({
   projectTitle, theme, fontSize, isDirty, saving,
-  panelOpen, entityPanelOpen,
-  onTogglePanel, onToggleEntityPanel,
+  panelOpen, entityPanelOpen, ollamaPanelOpen,
+  onTogglePanel, onToggleEntityPanel, onToggleOllamaPanel,
   onSave, onExport, onThemeToggle,
   onFontSizeIncrease, onFontSizeDecrease
 }: ToolbarProps) {
@@ -55,6 +57,13 @@ export function Toolbar({
           title="Painel de entidades"
         >
           @
+        </button>
+        <button
+          className={styles.iconBtn + (ollamaPanelOpen ? ' ' + styles.iconBtnActive : '')}
+          onClick={onToggleOllamaPanel}
+          title="Sugestões LLM (Ollama)"
+        >
+          ✦
         </button>
         <button className={styles.iconBtn} onClick={onExport} title="Exportar (PDF, DOCX, EPUB…)">
           ⬆

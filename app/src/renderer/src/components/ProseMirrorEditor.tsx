@@ -25,6 +25,9 @@ export interface EditorCommands {
   insertVersionGroup: () => void
   insertEntityMark: (entityId: string, entityType: string, entityName: string, color: string) => void
   hasSelection: () => boolean
+  getSelectedText: () => string
+  getContextText: (chars?: number) => string
+  insertTextAtCursor: (text: string) => void
 }
 
 interface ProseMirrorEditorProps {
@@ -136,6 +139,32 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
         if (!view) return false
         const { from, to } = view.state.selection
         return from !== to
+      },
+
+      getSelectedText() {
+        const view = viewRef.current
+        if (!view) return ''
+        const { from, to } = view.state.selection
+        if (from === to) return ''
+        return view.state.doc.textBetween(from, to, ' ')
+      },
+
+      getContextText(chars = 500) {
+        const view = viewRef.current
+        if (!view) return ''
+        const pos = view.state.selection.anchor
+        const start = Math.max(0, pos - chars)
+        return view.state.doc.textBetween(start, pos, ' ')
+      },
+
+      insertTextAtCursor(text: string) {
+        const view = viewRef.current
+        if (!view) return
+        const { state, dispatch } = view
+        dispatch(state.tr.replaceSelectionWith(
+          state.schema.text(text)
+        ))
+        view.focus()
       }
     }), [])
 

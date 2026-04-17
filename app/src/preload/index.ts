@@ -53,6 +53,26 @@ const api = {
       ipcRenderer.invoke('dialog:choose-dir'),
   },
 
+  // Ollama LLM
+  ollama: {
+    status: () =>
+      ipcRenderer.invoke('ollama:status') as Promise<{ running: boolean; models: string[] }>,
+    generate: (model: string, prompt: string) =>
+      ipcRenderer.invoke('ollama:generate', model, prompt) as Promise<{ success: boolean; error?: string }>,
+    onChunk: (cb: (text: string) => void) => {
+      ipcRenderer.on('ollama:chunk', (_e, t) => cb(t))
+    },
+    onDone: (cb: () => void) => {
+      ipcRenderer.once('ollama:done', cb)
+    },
+    onError: (cb: (msg: string) => void) => {
+      ipcRenderer.once('ollama:error', (_e, m) => cb(m))
+    },
+    removeChunkListener: () => {
+      ipcRenderer.removeAllListeners('ollama:chunk')
+    }
+  },
+
   // Exportação Pandoc
   export: {
     checkPandoc: () =>

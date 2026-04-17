@@ -5,6 +5,7 @@ import { Toolbar } from './Toolbar'
 import { StatusBar } from './StatusBar'
 import { EntityPanel, EntityPicker } from './EntityPanel'
 import { ExportDialog } from './ExportDialog'
+import { OllamaPanel } from './OllamaPanel'
 import { countWords } from '../editor/plugins/wordRepeat'
 import type { useProjectStore } from '../store/projectStore'
 import type { Chapter, Entity } from '../../../shared/types'
@@ -28,6 +29,7 @@ export function Editor({ store, onSave }: EditorProps) {
   const [pickerVisible, setPickerVisible] = useState(false)
   const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 })
   const [exportOpen, setExportOpen] = useState(false)
+  const [ollamaPanelOpen, setOllamaPanelOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Map chapterId → editor command ref
@@ -183,6 +185,8 @@ export function Editor({ store, onSave }: EditorProps) {
         entityPanelOpen={entityPanelOpen}
         onTogglePanel={() => setPanelOpen(v => !v)}
         onToggleEntityPanel={() => setEntityPanelOpen(v => !v)}
+        ollamaPanelOpen={ollamaPanelOpen}
+        onToggleOllamaPanel={() => setOllamaPanelOpen(v => !v)}
         onSave={handleSave}
         onExport={() => setExportOpen(true)}
         onThemeToggle={handleThemeToggle}
@@ -237,6 +241,14 @@ export function Editor({ store, onSave }: EditorProps) {
             ))}
           </div>
         </div>
+
+        {ollamaPanelOpen && (
+          <OllamaPanel
+            selectedText={activeEditor()?.getSelectedText() ?? ''}
+            contextText={activeEditor()?.getContextText() ?? ''}
+            onInsertText={text => activeEditor()?.insertTextAtCursor(text)}
+          />
+        )}
 
         {entityPanelOpen && (
           <EntityPanel

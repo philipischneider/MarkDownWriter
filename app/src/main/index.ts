@@ -3,6 +3,7 @@ import { join } from 'path'
 import { registerProjectHandlers } from './ipc/project'
 import { registerBackupHandlers } from './ipc/backup'
 import { registerExportHandlers } from './ipc/export'
+import { registerOllamaHandlers } from './ipc/ollama'
 
 const isDev = process.env.NODE_ENV === 'development'
 
@@ -45,6 +46,7 @@ app.whenReady().then(() => {
   registerProjectHandlers(ipcMain)
   registerBackupHandlers(ipcMain)
   registerExportHandlers(ipcMain)
+  registerOllamaHandlers(ipcMain)
 
   createWindow()
 
