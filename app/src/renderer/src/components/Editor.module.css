@@ -1,0 +1,114 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+.formattingBar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 12px;
+  background: var(--bg-toolbar);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.fmtBtn {
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+}
+.fmtBtn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.scrollArea {
+  flex: 1;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.editorContent {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 32px 200px;
+}
+
+.chapterBlock {
+  position: relative;
+}
+
+.firstChapterHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.chapterDivider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 64px 0 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.chapterLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.chapterStatus {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chapterStatus[data-status="rascunho"] {
+  background: var(--status-draft-bg);
+  color: var(--status-draft-text);
+}
+
+.chapterStatus[data-status="provisório"] {
+  background: var(--status-provisional-bg);
+  color: var(--status-provisional-text);
+}
+
+.chapterStatus[data-status="final"] {
+  background: var(--status-final-bg);
+  color: var(--status-final-text);
+}
+
+.chapterStatus[data-status="arquivado"] {
+  background: var(--status-archived-bg);
+  color: var(--status-archived-text);
+}
