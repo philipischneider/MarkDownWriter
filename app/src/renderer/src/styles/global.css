@@ -322,3 +322,59 @@ span.entity-ref {
 [data-theme="light"] .word-repeat {
   border-bottom-color: rgba(200, 90, 20, 0.6);
 }
+
+/* ─── LanguageTool ───────────────────────────────────────────────────────── */
+
+.lt-match { border-radius: 1px; cursor: pointer; }
+
+.lt-grammar  { border-bottom: 1.5px solid rgba(230, 80,  80,  0.7); }
+.lt-spelling { border-bottom: 1.5px solid rgba(230, 80,  80,  0.7); text-decoration-style: wavy; }
+.lt-style    { border-bottom: 1.5px solid rgba(80,  160, 230, 0.6); }
+
+[data-theme="light"] .lt-grammar  { border-bottom-color: rgba(200, 40, 40, 0.7); }
+[data-theme="light"] .lt-spelling { border-bottom-color: rgba(200, 40, 40, 0.7); }
+[data-theme="light"] .lt-style    { border-bottom-color: rgba(30, 120, 200, 0.6); }
+
+.lt-popup {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  min-width: 200px;
+  max-width: 260px;
+  overflow: hidden;
+}
+
+.lt-popup-msg {
+  padding: 10px 12px 8px;
+  color: var(--text-primary);
+  line-height: 1.45;
+  font-size: 12px;
+}
+
+.lt-popup-replacements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 10px 10px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+}
+
+.lt-popup-repl-btn {
+  padding: 3px 9px;
+  border-radius: 4px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.lt-popup-repl-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}

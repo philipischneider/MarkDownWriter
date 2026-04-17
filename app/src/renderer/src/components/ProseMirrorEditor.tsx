@@ -7,6 +7,7 @@ import { mdSerializer, parseMarkdown } from '../editor/markdown'
 import { buildInputRules } from '../editor/inputRules'
 import { wordRepeatPlugin } from '../editor/plugins/wordRepeat'
 import { findReplacePlugin, setQuery, findNext, findPrev, replaceCurrent, replaceAll } from '../editor/plugins/findReplace'
+import { languageToolPlugin, setLtEnabled } from '../editor/plugins/languageTool'
 import { FootnoteView, resetFootnoteCounter } from '../editor/nodeviews/FootnoteView'
 import { CommentView } from '../editor/nodeviews/CommentView'
 import { VersionGroupView } from '../editor/nodeviews/VersionGroupView'
@@ -17,7 +18,8 @@ function buildPlugins() {
     ...exampleSetup({ schema, menuBar: false }),
     buildInputRules(schema),
     wordRepeatPlugin(),
-    findReplacePlugin()
+    findReplacePlugin(),
+    languageToolPlugin()
   ]
 }
 
@@ -35,6 +37,7 @@ export interface EditorCommands {
   findPrev: () => void
   findReplaceCurrent: (replacement: string) => void
   findReplaceAll: (replacement: string) => void
+  setLtEnabled: (enabled: boolean) => void
 }
 
 interface ProseMirrorEditorProps {
@@ -190,6 +193,9 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
       },
       findReplaceAll(replacement: string) {
         if (viewRef.current) replaceAll(viewRef.current, replacement)
+      },
+      setLtEnabled(enabled: boolean) {
+        if (viewRef.current) setLtEnabled(viewRef.current, enabled)
       }
     }), [])
 

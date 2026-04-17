@@ -13,12 +13,14 @@ interface ToolbarProps {
   entityPanelOpen: boolean
   ollamaPanelOpen: boolean
   typographyPanelOpen: boolean
+  grammarEnabled: boolean
   focusMode: boolean
   viewMode: ViewMode
   onTogglePanel: () => void
   onToggleEntityPanel: () => void
   onToggleOllamaPanel: () => void
   onToggleTypographyPanel: () => void
+  onToggleGrammar: () => void
   onToggleFocusMode: () => void
   onSetViewMode: (mode: ViewMode) => void
   onSave: () => void
@@ -32,9 +34,9 @@ interface ToolbarProps {
 
 export function Toolbar({
   projectTitle, theme, fontSize, isDirty, saving,
-  panelOpen, entityPanelOpen, ollamaPanelOpen, typographyPanelOpen, focusMode, viewMode,
+  panelOpen, entityPanelOpen, ollamaPanelOpen, typographyPanelOpen, grammarEnabled, focusMode, viewMode,
   onTogglePanel, onToggleEntityPanel, onToggleOllamaPanel, onToggleTypographyPanel,
-  onToggleFocusMode, onSetViewMode,
+  onToggleGrammar, onToggleFocusMode, onSetViewMode,
   onSave, onExport, onThemeToggle,
   onFontSizeIncrease, onFontSizeDecrease,
   onFind, onEditProjectInfo
@@ -98,6 +100,13 @@ export function Toolbar({
         </button>
         <button className={styles.iconBtn} onClick={onFind} title="Buscar e substituir (Ctrl+F)">
           ⌕
+        </button>
+        <button
+          className={styles.iconBtn + (grammarEnabled ? ' ' + styles.iconBtnActive : '')}
+          onClick={onToggleGrammar}
+          title="Verificação gramatical LanguageTool (requer servidor em localhost:8081)"
+        >
+          ABC
         </button>
         <button
           className={styles.iconBtn + (typographyPanelOpen ? ' ' + styles.iconBtnActive : '')}

@@ -42,6 +42,7 @@ export function Editor({ store, onSave }: EditorProps) {
   const [findOpen, setFindOpen] = useState(false)
   const [focusMode, setFocusMode] = useState(false)
   const [projectInfoOpen, setProjectInfoOpen] = useState(false)
+  const [grammarEnabled, setGrammarEnabled] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Map chapterId → editor command ref
@@ -171,6 +172,14 @@ export function Editor({ store, onSave }: EditorProps) {
     }))
   }
 
+  const handleToggleGrammar = () => {
+    const next = !grammarEnabled
+    setGrammarEnabled(next)
+    for (const cmd of editorRefs.current.values()) {
+      cmd.setLtEnabled(next)
+    }
+  }
+
   const handleTypographyChange = (typography: typeof DEFAULT_TYPOGRAPHY) => {
     updateProject(p => ({ ...p, settings: { ...p.settings, typography } }))
   }
@@ -221,12 +230,14 @@ export function Editor({ store, onSave }: EditorProps) {
           entityPanelOpen={entityPanelOpen}
           ollamaPanelOpen={ollamaPanelOpen}
           typographyPanelOpen={typographyPanelOpen}
+          grammarEnabled={grammarEnabled}
           focusMode={focusMode}
           viewMode={viewMode}
           onTogglePanel={() => setPanelOpen(v => !v)}
           onToggleEntityPanel={() => setEntityPanelOpen(v => !v)}
           onToggleOllamaPanel={() => setOllamaPanelOpen(v => !v)}
           onToggleTypographyPanel={() => setTypographyPanelOpen(v => !v)}
+          onToggleGrammar={handleToggleGrammar}
           onToggleFocusMode={() => setFocusMode(v => !v)}
           onSetViewMode={setViewMode}
           onSave={handleSave}
@@ -307,8 +318,12 @@ export function Editor({ store, onSave }: EditorProps) {
                   />
                   <ProseMirrorEditor
                     ref={cmds => {
-                      if (cmds) editorRefs.current.set(chapter.id, cmds)
-                      else editorRefs.current.delete(chapter.id)
+                      if (cmds) {
+                        editorRefs.current.set(chapter.id, cmds)
+                        if (grammarEnabled) cmds.setLtEnabled(true)
+                      } else {
+                        editorRefs.current.delete(chapter.id)
+                      }
                     }}
                     chapterId={chapter.id}
                     content={chaptersContent[chapter.id] ?? ''}
