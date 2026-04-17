@@ -1,0 +1,37 @@
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 26px;
+  background: var(--bg-toolbar);
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.chapterName {
+  font-size: 11px;
+  color: var(--text-muted);
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.counts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.count {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sep {
+  color: var(--border-color);
+  font-size: 12px;
+}

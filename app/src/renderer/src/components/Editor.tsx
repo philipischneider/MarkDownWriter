@@ -1,9 +1,12 @@
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { ChapterPanel } from './ChapterPanel'
 import { ProseMirrorEditor, EditorCommands } from './ProseMirrorEditor'
 import { Toolbar } from './Toolbar'
+import { StatusBar } from './StatusBar'
+import { EntityPanel, EntityPicker } from './EntityPanel'
+import { countWords } from '../editor/plugins/wordRepeat'
 import type { useProjectStore } from '../store/projectStore'
-import type { Chapter } from '../../../shared/types'
+import type { Chapter, Entity } from '../../../shared/types'
 import styles from './Editor.module.css'
 
 interface EditorProps {
@@ -12,10 +15,17 @@ interface EditorProps {
 }
 
 export function Editor({ store, onSave }: EditorProps) {
-  const { state, updateChapterContent, updateProject, setActiveChapter, addChapter, reorderChapters, deleteChapter } = store
+  const {
+    state, updateChapterContent, updateProject, setActiveChapter,
+    addChapter, reorderChapters, deleteChapter,
+    addEntity, updateEntity, deleteEntity
+  } = store
   const { project, projectDir, chaptersContent, activeChapterId } = state
   const [panelOpen, setPanelOpen] = useState(true)
+  const [entityPanelOpen, setEntityPanelOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [pickerVisible, setPickerVisible] = useState(false)
+  const [pickerPos, setPickerPos] = useState({ top: 0, left: 0 })
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Map chapterId → editor command ref
@@ -133,6 +143,32 @@ export function Editor({ store, onSave }: EditorProps) {
     }))
   }
 
+  const wordCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const [id, md] of Object.entries(chaptersContent)) {
+      counts[id] = countWords(md)
+    }
+    return counts
+  }, [chaptersContent])
+
+  const totalWords = useMemo(
+    () => Object.values(wordCounts).reduce((a, b) => a + b, 0),
+    [wordCounts]
+  )
+
+  const activeChapter = project.chapters.find(c => c.id === activeChapterId)
+
+  const handleEntityMarkInText = (entity: Entity) => {
+    activeEditor()?.insertEntityMark(entity.id, entity.type, entity.name, entity.color)
+  }
+
+  const handleOpenEntityPicker = (e: React.MouseEvent) => {
+    if (!activeEditor()?.hasSelection()) return
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    setPickerPos({ top: rect.bottom + 6, left: rect.left })
+    setPickerVisible(true)
+  }
+
   return (
     <div className={styles.shell}>
       <Toolbar
@@ -142,7 +178,9 @@ export function Editor({ store, onSave }: EditorProps) {
         isDirty={state.isDirty}
         saving={saving}
         panelOpen={panelOpen}
+        entityPanelOpen={entityPanelOpen}
         onTogglePanel={() => setPanelOpen(v => !v)}
+        onToggleEntityPanel={() => setEntityPanelOpen(v => !v)}
         onSave={handleSave}
         onThemeToggle={handleThemeToggle}
         onFontSizeIncrease={() => handleFontSizeChange(1)}
@@ -154,6 +192,7 @@ export function Editor({ store, onSave }: EditorProps) {
         onInsertFootnote={() => activeEditor()?.insertFootnote()}
         onInsertComment={() => activeEditor()?.insertComment()}
         onInsertVersionGroup={() => activeEditor()?.insertVersionGroup()}
+        onInsertEntity={handleOpenEntityPicker}
       />
 
       <div className={styles.body}>
@@ -195,7 +234,36 @@ export function Editor({ store, onSave }: EditorProps) {
             ))}
           </div>
         </div>
+
+        {entityPanelOpen && (
+          <EntityPanel
+            entities={project.entities}
+            chaptersContent={chaptersContent}
+            onAdd={addEntity}
+            onUpdate={updateEntity}
+            onDelete={deleteEntity}
+            onMarkInText={handleEntityMarkInText}
+          />
+        )}
       </div>
+
+      <StatusBar
+        activeChapterTitle={activeChapter?.title ?? ''}
+        activeChapterWords={activeChapterId ? (wordCounts[activeChapterId] ?? 0) : 0}
+        totalWords={totalWords}
+      />
+
+      {pickerVisible && (
+        <EntityPicker
+          entities={project.entities}
+          onPick={entity => {
+            handleEntityMarkInText(entity)
+            setPickerVisible(false)
+          }}
+          onClose={() => setPickerVisible(false)}
+          style={{ top: pickerPos.top, left: pickerPos.left }}
+        />
+      )}
     </div>
   )
 }
@@ -206,9 +274,10 @@ interface FormattingBarProps {
   onInsertFootnote: () => void
   onInsertComment: () => void
   onInsertVersionGroup: () => void
+  onInsertEntity: (e: React.MouseEvent) => void
 }
 
-function FormattingBar({ onInsertFootnote, onInsertComment, onInsertVersionGroup }: FormattingBarProps) {
+function FormattingBar({ onInsertFootnote, onInsertComment, onInsertVersionGroup, onInsertEntity }: FormattingBarProps) {
   return (
     <div className={styles.formattingBar}>
       <button
@@ -223,7 +292,6 @@ function FormattingBar({ onInsertFootnote, onInsertComment, onInsertVersionGroup
         title="Marcar trecho como comentário (selecione texto primeiro)"
         onMouseDown={e => { e.preventDefault(); onInsertComment() }}
       >
-        {/* comment icon */}
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path d="M2 2h12v9H9l-3 3v-3H2z" />
         </svg>
@@ -234,6 +302,13 @@ function FormattingBar({ onInsertFootnote, onInsertComment, onInsertVersionGroup
         onMouseDown={e => { e.preventDefault(); onInsertVersionGroup() }}
       >
         v1|v2
+      </button>
+      <button
+        className={styles.fmtBtn}
+        title="Marcar trecho como entidade (selecione texto primeiro)"
+        onMouseDown={e => { e.preventDefault(); onInsertEntity(e) }}
+      >
+        @
       </button>
     </div>
   )

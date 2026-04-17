@@ -10,15 +10,29 @@ export interface Chapter {
   modified: string
 }
 
-export interface EntityRef {
+export interface EntityField {
+  key: string
+  label: string
+  value: string
+}
+
+export interface Entity {
   id: string
   type: EntityType
   name: string
-  aliases: string[]
+  aliases: string[]   // nomes alternativos usados no texto
+  color: string       // cor do highlight no texto (hex)
+  description: string
+  fields: EntityField[]
+  created: string
+  modified: string
 }
 
+// Mantido para compatibilidade com project.json legado
+export type EntityRef = Pick<Entity, 'id' | 'type' | 'name' | 'aliases'>
+
 export interface ProjectSettings {
-  autosaveInterval: number      // segundos
+  autosaveInterval: number
   backupRetentionHours: number
   backupMaxSnapshots: number
   theme: Theme
@@ -30,7 +44,7 @@ export interface Project {
   title: string
   author: string
   chapters: Chapter[]
-  entities: EntityRef[]
+  entities: Entity[]
   settings: ProjectSettings
 }
 

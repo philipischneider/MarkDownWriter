@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
-import type { Project, Chapter, LoadedProject } from '../../../shared/types'
+import type { Project, Chapter, Entity, LoadedProject } from '../../../shared/types'
 
 export interface ProjectState {
   projectDir: string | null
@@ -23,7 +23,10 @@ export function useProjectStore() {
   const loadProject = useCallback(async (loaded: LoadedProject) => {
     setState({
       projectDir: loaded.projectDir,
-      project: loaded.project,
+      project: {
+        ...loaded.project,
+        entities: loaded.project.entities ?? []
+      },
       chaptersContent: loaded.chaptersContent,
       activeChapterId: loaded.project.chapters[0]?.id ?? null,
       isDirty: false
@@ -54,10 +57,7 @@ export function useProjectStore() {
       if (!prev.project) return prev
       return {
         ...prev,
-        project: {
-          ...prev.project,
-          chapters: [...prev.project.chapters, chapter]
-        },
+        project: { ...prev.project, chapters: [...prev.project.chapters, chapter] },
         chaptersContent: { ...prev.chaptersContent, [chapter.id]: '' },
         activeChapterId: chapter.id,
         isDirty: true
@@ -68,11 +68,7 @@ export function useProjectStore() {
   const reorderChapters = useCallback((chapters: Chapter[]) => {
     setState(prev => {
       if (!prev.project) return prev
-      return {
-        ...prev,
-        project: { ...prev.project, chapters },
-        isDirty: true
-      }
+      return { ...prev, project: { ...prev.project, chapters }, isDirty: true }
     })
   }, [])
 
@@ -83,14 +79,47 @@ export function useProjectStore() {
       const content = { ...prev.chaptersContent }
       delete content[chapterId]
       const activeChapterId =
-        prev.activeChapterId === chapterId
-          ? (chapters[0]?.id ?? null)
-          : prev.activeChapterId
+        prev.activeChapterId === chapterId ? (chapters[0]?.id ?? null) : prev.activeChapterId
+      return { ...prev, project: { ...prev.project, chapters }, chaptersContent: content, activeChapterId, isDirty: true }
+    })
+  }, [])
+
+  // ─── Entidades ──────────────────────────────────────────────────────────────
+
+  const addEntity = useCallback((entity: Entity) => {
+    setState(prev => {
+      if (!prev.project) return prev
       return {
         ...prev,
-        project: { ...prev.project, chapters },
-        chaptersContent: content,
-        activeChapterId,
+        project: { ...prev.project, entities: [...prev.project.entities, entity] },
+        isDirty: true
+      }
+    })
+  }, [])
+
+  const updateEntity = useCallback((entity: Entity) => {
+    setState(prev => {
+      if (!prev.project) return prev
+      return {
+        ...prev,
+        project: {
+          ...prev.project,
+          entities: prev.project.entities.map(e => e.id === entity.id ? entity : e)
+        },
+        isDirty: true
+      }
+    })
+  }, [])
+
+  const deleteEntity = useCallback((entityId: string) => {
+    setState(prev => {
+      if (!prev.project) return prev
+      return {
+        ...prev,
+        project: {
+          ...prev.project,
+          entities: prev.project.entities.filter(e => e.id !== entityId)
+        },
         isDirty: true
       }
     })
@@ -109,6 +138,9 @@ export function useProjectStore() {
     addChapter,
     reorderChapters,
     deleteChapter,
+    addEntity,
+    updateEntity,
+    deleteEntity,
     markClean,
     autosaveTimer
   }

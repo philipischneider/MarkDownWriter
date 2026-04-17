@@ -48,6 +48,32 @@ const version: NodeSpec = {
 
 // ─── Marks customizados ──────────────────────────────────────────────────────
 
+const entity_ref: MarkSpec = {
+  attrs: {
+    entityId:   { default: '' },
+    entityType: { default: 'characters' },
+    entityName: { default: '' },
+    color:      { default: '' }
+  },
+  inclusive: false,
+  toDOM: node => ['span', {
+    class: 'entity-ref',
+    'data-entity-id':   node.attrs.entityId,
+    'data-entity-type': node.attrs.entityType,
+    'data-entity-name': node.attrs.entityName,
+    style: node.attrs.color ? `--entity-color:${node.attrs.color}` : ''
+  }, 0],
+  parseDOM: [{
+    tag: 'span.entity-ref',
+    getAttrs: el => ({
+      entityId:   (el as HTMLElement).getAttribute('data-entity-id')   ?? '',
+      entityType: (el as HTMLElement).getAttribute('data-entity-type') ?? 'characters',
+      entityName: (el as HTMLElement).getAttribute('data-entity-name') ?? '',
+      color:      (el as HTMLElement).style.getPropertyValue('--entity-color') ?? ''
+    })
+  }]
+}
+
 const comment: MarkSpec = {
   attrs: {
     text: { default: '' },
@@ -76,7 +102,7 @@ export const schema = new Schema({
   nodes: baseNodes
     .addBefore('image', 'footnote', footnote)
     .append({ version_group, version }),
-  marks: (basicSchema.spec.marks as any).append({ comment })
+  marks: (basicSchema.spec.marks as any).append({ comment, entity_ref })
 })
 
 export type EditorSchema = typeof schema

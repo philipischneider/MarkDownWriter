@@ -54,6 +54,10 @@
   color: var(--text-primary);
 }
 
+.iconBtnActive {
+  color: var(--accent) !important;
+}
+
 .fontControls {
   display: flex;
   align-items: center;

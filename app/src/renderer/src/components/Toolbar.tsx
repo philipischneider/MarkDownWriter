@@ -8,7 +8,9 @@ interface ToolbarProps {
   isDirty: boolean
   saving: boolean
   panelOpen: boolean
+  entityPanelOpen: boolean
   onTogglePanel: () => void
+  onToggleEntityPanel: () => void
   onSave: () => void
   onThemeToggle: () => void
   onFontSizeIncrease: () => void
@@ -17,7 +19,9 @@ interface ToolbarProps {
 
 export function Toolbar({
   projectTitle, theme, fontSize, isDirty, saving,
-  panelOpen, onTogglePanel, onSave, onThemeToggle,
+  panelOpen, entityPanelOpen,
+  onTogglePanel, onToggleEntityPanel,
+  onSave, onThemeToggle,
   onFontSizeIncrease, onFontSizeDecrease
 }: ToolbarProps) {
   return (
@@ -43,6 +47,13 @@ export function Toolbar({
         </div>
         <button className={styles.iconBtn} onClick={onThemeToggle} title="Alternar tema">
           {theme === 'dark' ? '☀' : '☾'}
+        </button>
+        <button
+          className={styles.iconBtn + (entityPanelOpen ? ' ' + styles.iconBtnActive : '')}
+          onClick={onToggleEntityPanel}
+          title="Painel de entidades"
+        >
+          @
         </button>
         <button className={styles.iconBtn} onClick={onSave} title="Salvar (Ctrl+S)">
           ↓

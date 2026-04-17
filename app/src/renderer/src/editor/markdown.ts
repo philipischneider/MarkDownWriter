@@ -66,6 +66,20 @@ export const mdSerializer = new MarkdownSerializer(
   {
     ...defaultMarkdownSerializer.marks,
 
+    // Referência a entidade: serializada como span HTML
+    entity_ref: {
+      open(_state, mark) {
+        const id   = (mark.attrs.entityId   as string)
+        const type = (mark.attrs.entityType as string)
+        const name = (mark.attrs.entityName as string).replace(/"/g, '&quot;')
+        const color = (mark.attrs.color as string)
+        return `<span class="entity-ref" data-entity-id="${id}" data-entity-type="${type}" data-entity-name="${name}"${color ? ` style="--entity-color:${color}"` : ''}>`
+      },
+      close: () => '</span>',
+      mixable: true,
+      expelEnclosingWhitespace: true
+    },
+
     // Comentário: serializado como HTML comment span
     comment: {
       open(state, mark) {

@@ -5,6 +5,7 @@ import { exampleSetup } from 'prosemirror-example-setup'
 import { schema } from '../editor/schema'
 import { mdParser, mdSerializer } from '../editor/markdown'
 import { buildInputRules } from '../editor/inputRules'
+import { wordRepeatPlugin } from '../editor/plugins/wordRepeat'
 import { FootnoteView, resetFootnoteCounter } from '../editor/nodeviews/FootnoteView'
 import { CommentView } from '../editor/nodeviews/CommentView'
 import { VersionGroupView } from '../editor/nodeviews/VersionGroupView'
@@ -13,7 +14,8 @@ import styles from './ProseMirrorEditor.module.css'
 function buildPlugins() {
   return [
     ...exampleSetup({ schema, menuBar: false }),
-    buildInputRules(schema)
+    buildInputRules(schema),
+    wordRepeatPlugin()
   ]
 }
 
@@ -21,6 +23,8 @@ export interface EditorCommands {
   insertFootnote: () => void
   insertComment: () => void
   insertVersionGroup: () => void
+  insertEntityMark: (entityId: string, entityType: string, entityName: string, color: string) => void
+  hasSelection: () => boolean
 }
 
 interface ProseMirrorEditorProps {
@@ -113,6 +117,25 @@ export const ProseMirrorEditor = forwardRef<EditorCommands, ProseMirrorEditorPro
 
         dispatch(state.tr.replaceWith(blockStart, blockEnd, group))
         view.focus()
+      },
+
+      insertEntityMark(entityId, entityType, entityName, color) {
+        const view = viewRef.current
+        if (!view) return
+        const { state, dispatch } = view
+        const markType = state.schema.marks.entity_ref
+        if (!markType) return
+        const { from, to } = state.selection
+        if (from === to) return
+        dispatch(state.tr.addMark(from, to, markType.create({ entityId, entityType, entityName, color })))
+        view.focus()
+      },
+
+      hasSelection() {
+        const view = viewRef.current
+        if (!view) return false
+        const { from, to } = view.state.selection
+        return from !== to
       }
     }), [])
 

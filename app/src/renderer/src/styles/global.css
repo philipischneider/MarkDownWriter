@@ -273,3 +273,24 @@ span.comment-mark {
 .version-group[data-active="7"] .version-body > .version:nth-child(8) { display: block; }
 .version-group[data-active="8"] .version-body > .version:nth-child(9) { display: block; }
 .version-group[data-active="9"] .version-body > .version:nth-child(10) { display: block; }
+
+/* ─── Marcação de entidades ──────────────────────────────────────────────── */
+
+span.entity-ref {
+  --entity-color: var(--accent);
+  background: color-mix(in srgb, var(--entity-color) 15%, transparent);
+  border-bottom: 1.5px solid color-mix(in srgb, var(--entity-color) 60%, transparent);
+  border-radius: 2px;
+  cursor: default;
+}
+
+/* ─── Repetição de palavras ──────────────────────────────────────────────── */
+
+.word-repeat {
+  border-bottom: 1.5px dotted rgba(230, 120, 40, 0.7);
+  border-radius: 1px;
+}
+
+[data-theme="light"] .word-repeat {
+  border-bottom-color: rgba(200, 90, 20, 0.6);
+}
