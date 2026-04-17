@@ -11,8 +11,13 @@ export const mdParser = new MarkdownParser(
   MarkdownIt('commonmark', { html: true }),
   {
     ...defaultMarkdownParser.tokens,
-    // footnote: tratado via pós-processamento de HTML
-    // version_group / comment: carregados via HTML passthrough
+    // Inline HTML (entity-ref spans, comment spans, footnote elements):
+    // ignore the tags — the text content inside them is preserved as normal text tokens.
+    // This prevents the parser from throwing on content serialized with custom HTML marks.
+    html_inline: { ignore: true },
+    // Block HTML (version group comments, etc.): ignore markers,
+    // text content inside version blocks is preserved as regular paragraph tokens.
+    html_block: { ignore: true },
   }
 )
 
@@ -82,7 +87,7 @@ export const mdSerializer = new MarkdownSerializer(
 
     // Comentário: serializado como HTML comment span
     comment: {
-      open(state, mark) {
+      open(_state, mark) {
         const id = (mark.attrs.id as string) || 'c-' + Math.random().toString(36).slice(2, 6)
         const text = (mark.attrs.text as string).replace(/"/g, '&quot;')
         return `<span class="comment-mark" data-id="${id}" data-comment="${text}">`

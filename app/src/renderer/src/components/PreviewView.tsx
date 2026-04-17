@@ -3,7 +3,7 @@ import MarkdownIt from 'markdown-it'
 import styles from './PreviewView.module.css'
 import type { Chapter } from '../../../shared/types'
 
-const md = new MarkdownIt({ html: false, linkify: true, typographer: true })
+const md = new MarkdownIt({ html: true, linkify: true, typographer: true })
 
 interface PreviewViewProps {
   chapters: Chapter[]

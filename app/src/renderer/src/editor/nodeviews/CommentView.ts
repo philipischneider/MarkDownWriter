@@ -8,10 +8,12 @@ export class CommentView {
   private mark: Mark
   private view: EditorView
   private outsideClickHandler: ((e: MouseEvent) => void) | null = null
+  private localText: string = ''
 
   constructor(mark: Mark, view: EditorView) {
     this.mark = mark
     this.view = view
+    this.localText = mark.attrs.text || ''
 
     this.dom = document.createElement('span')
     this.dom.className = 'comment-mark'
@@ -37,9 +39,11 @@ export class CommentView {
 
   private togglePopup() {
     if (this.popup) {
-      this.closePopup()
+      this.closeAndSave()
       return
     }
+
+    this.localText = this.mark.attrs.text || ''
 
     this.popup = document.createElement('div')
     this.popup.className = 'comment-popup'
@@ -48,23 +52,25 @@ export class CommentView {
         <span>Comentário</span>
         <button class="comment-popup-close" title="Fechar">×</button>
       </div>
-      <textarea class="comment-popup-input" rows="3" placeholder="Digite o comentário...">${this.mark.attrs.text || ''}</textarea>
+      <textarea class="comment-popup-input" rows="3" placeholder="Digite o comentário..."></textarea>
     `
 
-    // Mount on body so it's outside the contenteditable
+    const textarea = this.popup.querySelector('textarea')!
+    textarea.value = this.localText
+
     document.body.appendChild(this.popup)
     this.positionPopup()
 
-    const textarea = this.popup.querySelector('textarea')!
-    const closeBtn = this.popup.querySelector('.comment-popup-close')!
-
+    // Track changes locally — DO NOT dispatch transaction on every keystroke
+    // (dispatching would cause ProseMirror to recreate this markview, destroying the popup)
     textarea.addEventListener('input', () => {
-      this.updateMarkText(textarea.value)
+      this.localText = textarea.value
     })
 
+    const closeBtn = this.popup.querySelector('.comment-popup-close')!
     closeBtn.addEventListener('mousedown', e => {
       e.preventDefault()
-      this.closePopup()
+      this.closeAndSave()
     })
 
     setTimeout(() => {
@@ -78,7 +84,7 @@ export class CommentView {
         !this.popup.contains(e.target as Node) &&
         !this.dom.contains(e.target as Node)
       ) {
-        this.closePopup()
+        this.closeAndSave()
       }
     }
     setTimeout(() => {
@@ -99,6 +105,16 @@ export class CommentView {
     this.popup.style.top = (rect.bottom + 6) + 'px'
     this.popup.style.width = popupWidth + 'px'
     this.popup.style.zIndex = '9999'
+  }
+
+  private closeAndSave() {
+    const textToSave = this.localText
+    const prevText = this.mark.attrs.text || ''
+    this.closePopup()
+    // Only dispatch if text actually changed
+    if (textToSave !== prevText) {
+      this.updateMarkText(textToSave)
+    }
   }
 
   private closePopup() {
