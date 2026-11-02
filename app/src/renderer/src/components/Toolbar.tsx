@@ -1,6 +1,8 @@
 import styles from './Toolbar.module.css'
 import type { Theme } from '../../../shared/types'
 
+export type LtStatus = 'off' | 'starting' | 'running' | 'error'
+
 export type ViewMode = 'edit' | 'source' | 'preview'
 
 interface ToolbarProps {
@@ -14,6 +16,7 @@ interface ToolbarProps {
   ollamaPanelOpen: boolean
   typographyPanelOpen: boolean
   grammarEnabled: boolean
+  ltStatus: LtStatus
   numberingEnabled: boolean
   focusMode: boolean
   viewMode: ViewMode
@@ -22,6 +25,7 @@ interface ToolbarProps {
   onToggleOllamaPanel: () => void
   onToggleTypographyPanel: () => void
   onToggleGrammar: () => void
+  onConfigureLt: () => void
   onToggleNumbering: () => void
   onToggleFocusMode: () => void
   onSetViewMode: (mode: ViewMode) => void
@@ -34,11 +38,18 @@ interface ToolbarProps {
   onEditProjectInfo: () => void
 }
 
+const LT_STATUS_DOT: Record<LtStatus, { color: string; title: string }> = {
+  off:      { color: 'transparent',      title: '' },
+  starting: { color: 'var(--accent)',    title: 'Iniciando servidor…' },
+  running:  { color: '#4caf50',          title: 'Servidor ativo' },
+  error:    { color: 'var(--color-danger, #e05252)', title: 'Servidor indisponível — clique direito para configurar' },
+}
+
 export function Toolbar({
   projectTitle, theme, fontSize, isDirty, saving,
-  panelOpen, entityPanelOpen, ollamaPanelOpen, typographyPanelOpen, grammarEnabled, numberingEnabled, focusMode, viewMode,
+  panelOpen, entityPanelOpen, ollamaPanelOpen, typographyPanelOpen, grammarEnabled, ltStatus, numberingEnabled, focusMode, viewMode,
   onTogglePanel, onToggleEntityPanel, onToggleOllamaPanel, onToggleTypographyPanel,
-  onToggleGrammar, onToggleNumbering, onToggleFocusMode, onSetViewMode,
+  onToggleGrammar, onConfigureLt, onToggleNumbering, onToggleFocusMode, onSetViewMode,
   onSave, onExport, onThemeToggle,
   onFontSizeIncrease, onFontSizeDecrease,
   onFind, onEditProjectInfo
@@ -111,11 +122,20 @@ export function Toolbar({
           §
         </button>
         <button
-          className={styles.iconBtn + (grammarEnabled ? ' ' + styles.iconBtnActive : '')}
+          className={`${styles.iconBtn} ${styles.ltBtn} ${grammarEnabled ? styles.iconBtnActive : ''}`}
           onClick={onToggleGrammar}
-          title="Verificação gramatical LanguageTool (requer servidor em localhost:8081)"
+          onContextMenu={e => { e.preventDefault(); onConfigureLt() }}
+          title={ltStatus !== 'off'
+            ? `Verificação gramatical — ${LT_STATUS_DOT[ltStatus].title}\nClique direito para configurar`
+            : 'Ativar verificação gramatical LanguageTool\nClique direito para configurar JAR'}
         >
           ABC
+          {ltStatus !== 'off' && (
+            <span
+              className={styles.ltDot}
+              style={{ background: LT_STATUS_DOT[ltStatus].color }}
+            />
+          )}
         </button>
         <button
           className={styles.iconBtn + (typographyPanelOpen ? ' ' + styles.iconBtnActive : '')}

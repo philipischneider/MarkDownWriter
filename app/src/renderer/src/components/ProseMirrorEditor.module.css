@@ -5,29 +5,27 @@
 
 /* ── Gutter de numeração ─────────────────────────────────────────────────── */
 
-/* Quando numeração ativa, adiciona espaço à esquerda para o gutter */
-.editor.numberingActive :global(.ProseMirror) {
-  padding-left: 4.5em;
-}
-
-/* Headings recebem position:relative para o ::before absoluto funcionar */
-.editor.numberingActive :global(.ProseMirror h1),
-.editor.numberingActive :global(.ProseMirror h2),
-.editor.numberingActive :global(.ProseMirror h3) {
+/* Headings precisam de position:relative para o ::before absoluto */
+.editor :global(.ProseMirror h1),
+.editor :global(.ProseMirror h2),
+.editor :global(.ProseMirror h3) {
   position: relative;
 }
 
-/* Número do outline — aparece à esquerda do texto do heading, no gutter */
+/* Número do outline — flutua no gutter à ESQUERDA sem tocar o corpo do texto.
+   right: 100% + gap posiciona relativo à borda esquerda do próprio heading,
+   que coincide com a borda esquerda do ProseMirror — dentro do padding do
+   editorContent, visível mas fora do fluxo de texto. */
 .editor.numberingActive :global(.ProseMirror [data-outline-num]::before) {
   content: attr(data-outline-num);
   position: absolute;
-  right: calc(100% + 0.5em);
-  top: 0.25em;
+  right: calc(100% + 0.6em);
+  top: 0.3em;
   text-align: right;
   white-space: nowrap;
   color: var(--text-muted);
   font-family: var(--font-ui);
-  font-size: 0.72em;
+  font-size: 0.68em;
   font-weight: 400;
   letter-spacing: 0;
   pointer-events: none;

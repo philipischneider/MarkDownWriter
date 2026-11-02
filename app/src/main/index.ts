@@ -4,6 +4,7 @@ import { registerProjectHandlers } from './ipc/project'
 import { registerBackupHandlers } from './ipc/backup'
 import { registerExportHandlers } from './ipc/export'
 import { registerOllamaHandlers } from './ipc/ollama'
+import { registerLanguageToolHandlers, autoStartLt, stopLtServer } from './ipc/languageTool'
 
 const isDev = process.env.NODE_ENV === 'development'
 
@@ -47,6 +48,9 @@ app.whenReady().then(() => {
   registerBackupHandlers(ipcMain)
   registerExportHandlers(ipcMain)
   registerOllamaHandlers(ipcMain)
+  registerLanguageToolHandlers(ipcMain)
+
+  autoStartLt()
 
   createWindow()
 
@@ -56,6 +60,7 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+  stopLtServer()
   if (process.platform !== 'darwin') {
     app.quit()
   }

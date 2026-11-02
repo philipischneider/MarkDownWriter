@@ -73,6 +73,22 @@ const api = {
     }
   },
 
+  // LanguageTool server
+  lt: {
+    status: () =>
+      ipcRenderer.invoke('lt:status') as Promise<{ running: boolean; jarPath: string | null; managed: boolean }>,
+    start: () =>
+      ipcRenderer.invoke('lt:start') as Promise<{ success: boolean; error?: string }>,
+    stop: () =>
+      ipcRenderer.invoke('lt:stop') as Promise<{ success: boolean }>,
+    browseJar: () =>
+      ipcRenderer.invoke('lt:browse-jar') as Promise<string | null>,
+    getJarPath: () =>
+      ipcRenderer.invoke('lt:get-jar-path') as Promise<string | null>,
+    setJarPath: (jarPath: string) =>
+      ipcRenderer.invoke('lt:set-jar-path', jarPath) as Promise<{ success: boolean }>,
+  },
+
   // Exportação Pandoc
   export: {
     checkPandoc: () =>

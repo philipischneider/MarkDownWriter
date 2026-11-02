@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { ChapterPanel } from './ChapterPanel'
 import { ProseMirrorEditor, EditorCommands } from './ProseMirrorEditor'
-import { Toolbar, ViewMode } from './Toolbar'
+import { Toolbar, ViewMode, LtStatus } from './Toolbar'
 import { StatusBar } from './StatusBar'
 import { EntityPanel, EntityPicker } from './EntityPanel'
 import { ExportDialog } from './ExportDialog'
@@ -44,6 +44,7 @@ export function Editor({ store, onSave }: EditorProps) {
   const [focusMode, setFocusMode] = useState(false)
   const [projectInfoOpen, setProjectInfoOpen] = useState(false)
   const [grammarEnabled, setGrammarEnabled] = useState(false)
+  const [ltStatus, setLtStatus] = useState<LtStatus>('off')
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Map chapterId → editor command ref
@@ -81,6 +82,30 @@ export function Editor({ store, onSave }: EditorProps) {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [handleSave, focusMode])
+
+  // Poll LT server status while grammar is enabled
+  useEffect(() => {
+    if (!grammarEnabled) { setLtStatus('off'); return }
+
+    let active = true
+    const poll = async () => {
+      if (!active) return
+      const { running } = await window.api.lt.status()
+      if (active) setLtStatus(running ? 'running' : 'error')
+    }
+
+    poll()
+    const id = setInterval(poll, 5000)
+    return () => { active = false; clearInterval(id) }
+  }, [grammarEnabled])
+
+  const handleConfigureLt = async () => {
+    const jarPath = await window.api.lt.browseJar()
+    if (!jarPath) return
+    setLtStatus('starting')
+    const result = await window.api.lt.start()
+    setLtStatus(result.success ? 'running' : 'error')
+  }
 
   const handleAddChapter = async () => {
     const chapter = await window.api.chapter.create(projectDir)
@@ -189,11 +214,22 @@ export function Editor({ store, onSave }: EditorProps) {
     }))
   }
 
-  const handleToggleGrammar = () => {
+  const handleToggleGrammar = async () => {
     const next = !grammarEnabled
     setGrammarEnabled(next)
     for (const cmd of editorRefs.current.values()) {
       cmd.setLtEnabled(next)
+    }
+    if (next) {
+      // Se não há JAR configurado, abre o picker imediatamente
+      const jarPath = await window.api.lt.getJarPath()
+      if (!jarPath) {
+        const picked = await window.api.lt.browseJar()
+        if (!picked) { setGrammarEnabled(false); for (const cmd of editorRefs.current.values()) cmd.setLtEnabled(false); return }
+      }
+      setLtStatus('starting')
+      const result = await window.api.lt.start()
+      setLtStatus(result.success ? 'running' : 'error')
     }
   }
 
@@ -263,6 +299,7 @@ export function Editor({ store, onSave }: EditorProps) {
           ollamaPanelOpen={ollamaPanelOpen}
           typographyPanelOpen={typographyPanelOpen}
           grammarEnabled={grammarEnabled}
+          ltStatus={ltStatus}
           numberingEnabled={numberingEnabled}
           focusMode={focusMode}
           viewMode={viewMode}
@@ -271,6 +308,7 @@ export function Editor({ store, onSave }: EditorProps) {
           onToggleOllamaPanel={() => setOllamaPanelOpen(v => !v)}
           onToggleTypographyPanel={() => setTypographyPanelOpen(v => !v)}
           onToggleGrammar={handleToggleGrammar}
+          onConfigureLt={handleConfigureLt}
           onToggleNumbering={handleToggleNumbering}
           onToggleFocusMode={() => setFocusMode(v => !v)}
           onSetViewMode={setViewMode}
